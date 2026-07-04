@@ -10,6 +10,9 @@ export type GameType = 'jumble' | 'playback' | 'reading' | 'typing' | 'fill';
 /** Canonical difficulty (always lowercase). JSON seeds use PascalCase ("Easy"). */
 export type Difficulty = 'easy' | 'intermediate' | 'hard' | 'random';
 
+/** Language-assist level. Mirrors LanguageAssistLevel enum from lang_assist.dart. */
+export type AssistLevel = 'novice' | 'intermediate' | 'advanced';
+
 // ─── Base interface ───────────────────────────────────────────────────────────
 
 /** Fields shared by every question type. */
@@ -165,7 +168,7 @@ export interface QuestionLog {
   skills: string[];
   result: boolean;
   timeTakenInSeconds: number;
-  assistUsed: 'novice' | 'intermediate' | 'advanced' | null;
+  assistUsed: AssistLevel | null;
   assistInteractions: string[];
 }
 
