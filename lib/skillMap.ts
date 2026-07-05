@@ -1,0 +1,32 @@
+// Ported verbatim from the skillMap HashMap in home.dart.
+// Keys are the Firestore filter/skill tag strings; values are display labels.
+
+export const SKILL_MAP: Record<string, string> = {
+  single_digit_addition:                'Addition with Single Digits',
+  word_problem_written_form:            'Written Form from Word Problems',
+  three_place_addition:                 'Addition with Three Digits/Places',
+  multiple_operations:                  'Expressions with Multiple Operations',
+  three_place_subtraction:              'Subtraction with Three Digits/Places',
+  written_four_place_number_values:     'Numbers with Four Places in Written Form',
+  written_three_place_number_values:    'Numbers with Three Places in Written Form',
+  written_two_place_number_values:      'Numbers with Two Places in Written Form',
+  written_decimals_two_number_places:   'Decimals with Two Places in Written Form',
+  written_decimals_three_number_places: 'Decimals with Three Places in Written Form',
+  single_digit_division:                'Division with Single Digits',
+  spoken_written_form:                  'Listening Written Form Expressions/Problems',
+  money:                                'Money Operations',
+  single_digit_multiplication:          'Multiplication with Single Digits',
+  'self-spoken_written_form':           'Speaking in Written Form',
+  two_place_multiplication:             'Multiplication with Two Digits/Places',
+  three_or_more_place_multiplication:   'Multiplication with Three or More Digits/Places',
+  four_or_more_number_places:           'Understanding Numbers with Four or More Digits/Places',
+  four_or_more_place_addition:          'Addition with Four or More Digits/Places',
+  two_place_addition:                   'Addition with Two Digits/Places',
+  written_three_number_places:          'Writing Numbers with Three Digits/Places in Written Form',
+  fractions:                            'Fraction Handling',
+  two_place_division:                   'Division with Two Digits/Places',
+  number_sentences:                     'Understanding Number Sentences',
+  three_place_division:                 'Division with Three Digits/Places',
+  time:                                 'Time Operations',
+  written_form:                         'Written Form',
+};
