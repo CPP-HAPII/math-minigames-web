@@ -6,10 +6,12 @@ import { useThemeStore, selectActiveProfile } from '@/lib/stores/themeStore';
 import { useGameDataStore } from '@/lib/stores/gameDataStore';
 import { useSessionStore } from '@/lib/stores/sessionStore';
 import { useAssistStore } from '@/lib/stores/assistStore';
+import { useUserStore } from '@/lib/stores/userStore';
 import { selectSeriesQuestions } from '@/lib/session';
+import { submitQuizAttempt } from '@/lib/services/quizAttemptService';
 import { SKILL_MAP } from '@/lib/skillMap';
 import { themes, type ColorProfile } from '@/lib/themes';
-import type { AnyGameData, Difficulty } from '@/lib/types';
+import type { AnyGameData, Difficulty, QuizAttempt } from '@/lib/types';
 import JumbleGame from '@/components/games/JumbleGame';
 import TypingGame from '@/components/games/TypingGame';
 import FillBlanksGame from '@/components/games/FillBlanksGame';
@@ -18,6 +20,8 @@ const VALID_DIFFICULTIES: Difficulty[] = ['easy', 'intermediate', 'hard', 'rando
 
 /** How long the "✓ Correct!" / feedback state stays on screen before the series advances. */
 const FEEDBACK_DELAY_MS = 500;
+
+type WriteStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 function isDifficulty(v: string | null): v is Difficulty {
   return v !== null && (VALID_DIFFICULTIES as string[]).includes(v);
@@ -37,6 +41,7 @@ export default function PlayContent() {
   const p = hydrated ? profile : themes[0];
 
   const assistLevel = useAssistStore((s) => s.level);
+  const userId = useUserStore((s) => s.userId);
 
   // ── Question bank loading ───────────────────────────────────────────────────
   const isLoaded = useGameDataStore((s) => s.isLoaded);
@@ -58,6 +63,7 @@ export default function PlayContent() {
   const score = useSessionStore((s) => s.score);
   const correctCount = useSessionStore((s) => s.correctCount);
   const correctedAfterMistakeCount = useSessionStore((s) => s.correctedAfterMistakeCount);
+  const questionLogs = useSessionStore((s) => s.questionLogs);
   const highScore = useSessionStore((s) => s.highScore);
   const startSession = useSessionStore((s) => s.startSession);
   const submitAnswer = useSessionStore((s) => s.submitAnswer);
@@ -97,16 +103,53 @@ export default function PlayContent() {
   }, [currentQuestion?.id]);
 
   const [isNewHighScore, setIsNewHighScore] = useState(false);
+  const [attempt, setAttempt] = useState<QuizAttempt | null>(null);
 
+  // Computes the QuizAttempt exactly once per series, via completeSeries()
+  // (which also updates highScore). Kept in state (not just a local const)
+  // so it survives into the write-effect below and can be retried without
+  // recomputing — completeSeries() isn't idempotent (it stamps submissionTime).
   useEffect(() => {
     if (!seriesComplete || completedRef.current) return;
     completedRef.current = true;
     setIsNewHighScore(score > 0 && score > preSeriesHighScoreRef.current);
-    const attempt = completeSeries();
-    // Stage 10 will persist `attempt` to quizAttempts/{userId}/attempts/{autoId}
-    // (append model, addDoc). Logged here as the Stage 9 -> 10 hand-off point.
-    console.log('[PlayContent] Series complete — QuizAttempt ready for Stage 10:', attempt);
+    setAttempt(completeSeries());
   }, [seriesComplete, completeSeries, score]);
+
+  // ── Firestore write: quizAttempts/{userId}/attempts/{autoId} (append model) ──
+  // writeResult is only ever set from inside the async .then()/.catch()
+  // callbacks below, never synchronously in the effect body — 'saving' is
+  // derived (attempt set, no result yet) rather than an explicit setState.
+  const [writeResult, setWriteResult] = useState<{ ok: true } | { ok: false; message: string } | null>(null);
+  const [retryToken, setRetryToken] = useState(0);
+
+  useEffect(() => {
+    if (!attempt) return;
+    let cancelled = false;
+
+    submitQuizAttempt(userId, attempt)
+      .then(() => {
+        if (!cancelled) setWriteResult({ ok: true });
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        setWriteResult({ ok: false, message: err instanceof Error ? err.message : String(err) });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // retryToken is intentionally in the deps so bumping it re-runs the write
+    // against the same `attempt` without recomputing the series result.
+  }, [attempt, userId, retryToken]);
+
+  const writeStatus: WriteStatus = !attempt ? 'idle' : writeResult === null ? 'saving' : writeResult.ok ? 'saved' : 'error';
+  const writeError = writeResult && !writeResult.ok ? writeResult.message : null;
+
+  function handleRetryWrite() {
+    setWriteResult(null);
+    setRetryToken((t) => t + 1);
+  }
 
   // Holds the pending "advance to next question" timer so it can be cancelled
   // if the player navigates away mid-delay (e.g. Play Again) or the component
@@ -232,6 +275,64 @@ export default function PlayContent() {
           <p style={{ fontSize: '1rem', margin: '0.35rem 0' }}>
             Corrected after a mistake: {correctedAfterMistakeCount}
           </p>
+
+          {writeStatus === 'saving' && (
+            <p style={{ fontSize: '0.9rem', opacity: 0.8, marginTop: '0.75rem' }}>Saving your results…</p>
+          )}
+          {writeStatus === 'saved' && (
+            <p style={{ fontSize: '0.9rem', color: p.checkAnswerButtonColor, marginTop: '0.75rem' }}>
+              ✓ Results saved
+            </p>
+          )}
+          {writeStatus === 'error' && (
+            <div style={{ marginTop: '0.75rem' }}>
+              <p style={{ fontSize: '0.9rem', color: p.clearAnswerButtonColor, fontWeight: 700, margin: 0 }}>
+                Couldn&rsquo;t save your results.
+              </p>
+              {writeError && (
+                <p style={{ fontSize: '0.8rem', opacity: 0.75, margin: '0.25rem 0 0' }}>{writeError}</p>
+              )}
+              <button
+                onClick={handleRetryWrite}
+                style={{ ...actionButton, marginTop: '0.6rem', padding: '0.5rem 1.1rem', fontSize: '0.9rem' }}
+              >
+                Retry Save
+              </button>
+            </div>
+          )}
+        </div>
+
+        {questionLogs.length > 0 && (
+          <div style={{ ...card, textAlign: 'left' }}>
+            <p style={{ fontWeight: 700, marginBottom: '0.75rem', color: p.contrastTextColor }}>
+              Question Breakdown
+            </p>
+            <ol style={{ margin: 0, paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {questionLogs.map((log, i) => {
+                const q = questions[i];
+                const promptText = q && 'displayedProblem' in q ? q.displayedProblem : log.questionId;
+                return (
+                  <li key={`${log.questionId}-${i}`} style={{ fontSize: '0.9rem' }}>
+                    <span
+                      style={{
+                        fontWeight: 700,
+                        color: log.result ? p.checkAnswerButtonColor : p.clearAnswerButtonColor,
+                      }}
+                    >
+                      {log.result ? 'Correct on first try' : 'Corrected after a mistake'}
+                    </span>
+                    {' — '}
+                    {promptText}
+                    {' '}
+                    <span style={{ opacity: 0.7 }}>({log.timeTakenInSeconds}s)</span>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        )}
+
+        <div style={{ textAlign: 'center' }}>
           <button onClick={handlePlayAgain} style={actionButton}>
             ← Back to Home
           </button>
