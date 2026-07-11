@@ -1,18 +1,21 @@
 import type { AnyGameData, Difficulty, GameType, SequenceData } from './types';
 
 /**
- * Game types with a working component as of Stage 9. Playback (Stage 11) and
- * ReadAloud (Stage 14) questions are excluded from the series pool entirely
- * rather than rendered as a placeholder: every game in this series advances
- * the series via the onComplete(wasCorrect) contract, which requires the
- * player to actually solve the question. A placeholder can't produce that
- * callback, so it would either dead-end the series or need a fake "skip"
- * that doesn't exist anywhere else in this flow. Filtering the pool is the
- * option that keeps the state machine's only entry point (onComplete)
- * meaningful. Stage 11/14 only need to add their game type to this array and
- * a render branch in PlayContent — the selection/session logic doesn't change.
+ * Game types with a working component. ReadAloud (Stage 14) questions are
+ * still excluded from the series pool entirely rather than rendered as a
+ * placeholder: every game in this series advances the series via the
+ * onComplete(wasCorrect) contract, which requires the player to actually
+ * solve the question. A placeholder can't produce that callback, so it would
+ * either dead-end the series or need a fake "skip" that doesn't exist
+ * anywhere else in this flow. Filtering the pool is the option that keeps
+ * the state machine's only entry point (onComplete) meaningful.
+ *
+ * Playback was added in Stage 11, exactly as predicted in the Stage 9 note
+ * this comment used to carry: just this array entry plus a render branch in
+ * PlayContent — selectSeriesQuestions() itself needed no changes. Stage 14
+ * only needs to do the same for 'reading'.
  */
-export const SUPPORTED_GAME_TYPES: readonly GameType[] = ['jumble', 'typing', 'fill'];
+export const SUPPORTED_GAME_TYPES: readonly GameType[] = ['jumble', 'typing', 'fill', 'playback'];
 
 /** Number of questions in a 'random' difficulty series. Mirrors SeriesHomePage(maxQuestCount: 10) in game_series.dart. */
 const RANDOM_SERIES_LENGTH = 10;

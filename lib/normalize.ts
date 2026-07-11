@@ -195,6 +195,50 @@ export function normalizeComparisonString(s: string): string {
     .trim();
 }
 
+// ─── Ordered word-button selection validation ─────────────────────────────────
+//
+// Shared by JumbleGame and PlaybackGame: both present a word-button palette
+// over nested (string[][]) multiAcceptedAnswers and validate the picked order
+// identically. Ported from GameFormState.validateAnswer() in jumble.dart;
+// playback.dart's PlaybackGameFormState.validateAnswer() is the same
+// algorithm (it just returns an int mismatch-index instead of a string enum).
+
+/** The three validation outcomes for an ordered, button-selected answer. */
+export type OrderedSelectionResult = 'incomplete' | 'wrong' | 'correct';
+
+/**
+ * Validate an ordered token selection against nested accepted answers.
+ *
+ *   1. Lenient whole-phrase match (normalized join) — accepts even when fewer
+ *      buttons than maxSelection are picked, e.g. a button combining tokens.
+ *   2. Fewer than maxSelection tokens picked → incomplete.
+ *   3. Ordered token-wise exact match against any accepted answer → correct.
+ *   4. Otherwise → wrong.
+ */
+export function evaluateOrderedSelection(
+  selected: string[],
+  answers: string[][],
+  maxSelection: number,
+): OrderedSelectionResult {
+  const normSelected = normalizeComparisonString(selected.join(' '));
+  for (const answer of answers) {
+    if (normalizeComparisonString(answer.join(' ')) === normSelected) return 'correct';
+  }
+
+  if (selected.length < maxSelection) return 'incomplete';
+
+  for (const answer of answers) {
+    if (
+      answer.length === selected.length &&
+      answer.every((token, i) => token === selected[i])
+    ) {
+      return 'correct';
+    }
+  }
+
+  return 'wrong';
+}
+
 // ─── Per-type document parsers ────────────────────────────────────────────────
 //
 // These mirror the fromFirestore() factory constructors in game_data.dart.

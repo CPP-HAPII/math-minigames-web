@@ -15,6 +15,7 @@ import type { AnyGameData, Difficulty, QuizAttempt } from '@/lib/types';
 import JumbleGame from '@/components/games/JumbleGame';
 import TypingGame from '@/components/games/TypingGame';
 import FillBlanksGame from '@/components/games/FillBlanksGame';
+import PlaybackGame from '@/components/games/PlaybackGame';
 
 const VALID_DIFFICULTIES: Difficulty[] = ['easy', 'intermediate', 'hard', 'random'];
 
@@ -197,6 +198,11 @@ export default function PlayContent() {
           <FillBlanksGame key={currentQuestion.id} question={currentQuestion} assistLevel={assistLevel} onComplete={onComplete} />
         );
         break;
+      case 'playback':
+        gameElement = (
+          <PlaybackGame key={currentQuestion.id} question={currentQuestion} assistLevel={assistLevel} onComplete={onComplete} />
+        );
+        break;
       default:
         // Unreachable: selectSeriesQuestions() filters the pool to SUPPORTED_GAME_TYPES.
         break;
@@ -310,7 +316,14 @@ export default function PlayContent() {
             <ol style={{ margin: 0, paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {questionLogs.map((log, i) => {
                 const q = questions[i];
-                const promptText = q && 'displayedProblem' in q ? q.displayedProblem : log.questionId;
+                // Playback has no displayedProblem (the question is heard, not shown) — fall back
+                // to its audioTranscript so the breakdown still reads as the actual question.
+                const promptText =
+                  q && 'displayedProblem' in q
+                    ? q.displayedProblem
+                    : q && 'audioTranscript' in q
+                      ? q.audioTranscript
+                      : log.questionId;
                 return (
                   <li key={`${log.questionId}-${i}`} style={{ fontSize: '0.9rem' }}>
                     <span
