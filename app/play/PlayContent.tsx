@@ -16,6 +16,7 @@ import JumbleGame from '@/components/games/JumbleGame';
 import TypingGame from '@/components/games/TypingGame';
 import FillBlanksGame from '@/components/games/FillBlanksGame';
 import PlaybackGame from '@/components/games/PlaybackGame';
+import ReadAloudGame from '@/components/games/ReadAloudGame';
 
 const VALID_DIFFICULTIES: Difficulty[] = ['easy', 'intermediate', 'hard', 'random'];
 
@@ -201,6 +202,11 @@ export default function PlayContent() {
       case 'playback':
         gameElement = (
           <PlaybackGame key={currentQuestion.id} question={currentQuestion} assistLevel={assistLevel} onComplete={onComplete} />
+        );
+        break;
+      case 'reading':
+        gameElement = (
+          <ReadAloudGame key={currentQuestion.id} question={currentQuestion} assistLevel={assistLevel} onComplete={onComplete} />
         );
         break;
       default:
