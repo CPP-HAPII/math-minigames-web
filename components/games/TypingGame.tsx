@@ -6,6 +6,7 @@ import { normalizeComparisonString } from '@/lib/normalize';
 import { useThemeStore, selectActiveProfile } from '@/lib/stores/themeStore';
 import { themes } from '@/lib/themes';
 import { useGameBase } from '@/lib/hooks/useGameBase';
+import AnswerFeedback from './AnswerFeedback';
 
 interface TypingGameProps {
   question: TypingGameData;
@@ -86,17 +87,6 @@ export default function TypingGame({ question, assistLevel, onComplete }: Typing
     opacity: disabled ? 0.5 : 1,
   });
 
-  const feedback = (() => {
-    switch (result) {
-      case 'correct':
-        return { text: '✓ Correct!', color: p.checkAnswerButtonColor };
-      case 'wrong':
-        return { text: 'Try again — that isn’t quite right.', color: p.clearAnswerButtonColor };
-      default:
-        return null;
-    }
-  })();
-
   const checkDisabled = typed.trim().length === 0 || solved;
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -148,9 +138,9 @@ export default function TypingGame({ question, assistLevel, onComplete }: Typing
             fontSize: '1.15rem',
             padding: '0.7rem 0.9rem',
             borderRadius: '0.6rem',
-            border: '1px solid #00000033',
-            backgroundColor: '#ffffff',
-            color: '#000000',
+            border: `1px solid ${p.textColor}33`,
+            backgroundColor: p.backgroundColor,
+            color: p.textColor,
             resize: 'vertical',
             opacity: solved ? 0.6 : 1,
           }}
@@ -169,11 +159,12 @@ export default function TypingGame({ question, assistLevel, onComplete }: Typing
       </div>
 
       {/* Feedback. */}
-      {feedback && (
-        <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '1.1rem', fontWeight: 700, color: feedback.color }}>
-          {feedback.text}
-        </p>
-      )}
+      <AnswerFeedback
+        outcome={result}
+        wasCleanCorrect={!base.hadMistake}
+        profile={p}
+        wrongMessage="Try again — that isn’t quite right."
+      />
     </section>
   );
 }

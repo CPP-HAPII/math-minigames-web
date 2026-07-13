@@ -6,6 +6,7 @@ import { normalizeComparisonString } from '@/lib/normalize';
 import { useThemeStore, selectActiveProfile } from '@/lib/stores/themeStore';
 import { themes } from '@/lib/themes';
 import { useGameBase } from '@/lib/hooks/useGameBase';
+import AnswerFeedback from './AnswerFeedback';
 
 interface FillBlanksGameProps {
   question: FillBlanksGameData;
@@ -155,19 +156,6 @@ export default function FillBlanksGame({ question, assistLevel, onComplete }: Fi
     opacity: disabled ? 0.5 : 1,
   });
 
-  const feedback = (() => {
-    switch (result) {
-      case 'correct':
-        return { text: '✓ Correct!', color: p.checkAnswerButtonColor };
-      case 'wrong':
-        return { text: 'Try again — that isn’t quite right.', color: p.clearAnswerButtonColor };
-      case 'incomplete':
-        return { text: 'Fill in all the blanks first.', color: p.clearAnswerButtonColor };
-      default:
-        return null;
-    }
-  })();
-
   const actionsDisabled = filled.length === 0 || solved;
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -262,11 +250,13 @@ export default function FillBlanksGame({ question, assistLevel, onComplete }: Fi
       </div>
 
       {/* Feedback. */}
-      {feedback && (
-        <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '1.1rem', fontWeight: 700, color: feedback.color }}>
-          {feedback.text}
-        </p>
-      )}
+      <AnswerFeedback
+        outcome={result}
+        wasCleanCorrect={!base.hadMistake}
+        profile={p}
+        wrongMessage="Try again — that isn’t quite right."
+        incompleteMessage="Fill in all the blanks first."
+      />
     </section>
   );
 }

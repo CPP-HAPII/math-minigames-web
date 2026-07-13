@@ -17,6 +17,8 @@ import TypingGame from '@/components/games/TypingGame';
 import FillBlanksGame from '@/components/games/FillBlanksGame';
 import PlaybackGame from '@/components/games/PlaybackGame';
 import ReadAloudGame from '@/components/games/ReadAloudGame';
+import Calculator from '@/components/Calculator';
+import ProgressBar from '@/components/ProgressBar';
 
 const VALID_DIFFICULTIES: Difficulty[] = ['easy', 'intermediate', 'hard', 'random'];
 
@@ -65,6 +67,7 @@ export default function PlayContent() {
   const score = useSessionStore((s) => s.score);
   const correctCount = useSessionStore((s) => s.correctCount);
   const correctedAfterMistakeCount = useSessionStore((s) => s.correctedAfterMistakeCount);
+  const progress = useSessionStore((s) => s.progress);
   const questionLogs = useSessionStore((s) => s.questionLogs);
   const highScore = useSessionStore((s) => s.highScore);
   const startSession = useSessionStore((s) => s.startSession);
@@ -367,7 +370,12 @@ export default function PlayContent() {
         <span style={{ fontWeight: 700 }}>{categoryLabel}</span>
         <span>Question {currentIndex + 1} / {questions.length}</span>
         <span>Score: {score}</span>
+        <Calculator profile={p} />
       </header>
+
+      <div style={{ ...card, padding: '0.6rem 1.5rem' }}>
+        <ProgressBar progress={progress} profile={p} />
+      </div>
 
       {gameElement}
     </main>

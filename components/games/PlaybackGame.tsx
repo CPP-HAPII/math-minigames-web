@@ -7,6 +7,7 @@ import { useThemeStore, selectActiveProfile } from '@/lib/stores/themeStore';
 import { themes } from '@/lib/themes';
 import { useGameBase } from '@/lib/hooks/useGameBase';
 import { useAudioPlayback } from '@/lib/hooks/useAudioPlayback';
+import AnswerFeedback from './AnswerFeedback';
 
 interface PlaybackGameProps {
   question: PlaybackGameData;
@@ -142,19 +143,6 @@ export default function PlaybackGame({ question, assistLevel, onComplete }: Play
     opacity: disabled ? 0.5 : 1,
   });
 
-  const feedback = (() => {
-    switch (result) {
-      case 'correct':
-        return { text: '✓ Correct!', color: p.checkAnswerButtonColor };
-      case 'wrong':
-        return { text: 'Try again — that order isn’t quite right.', color: p.clearAnswerButtonColor };
-      case 'incomplete':
-        return { text: 'Please select more answers.', color: p.clearAnswerButtonColor };
-      default:
-        return null;
-    }
-  })();
-
   const playbackStatusText = (() => {
     switch (playbackStatus) {
       case 'playing':
@@ -272,11 +260,13 @@ export default function PlaybackGame({ question, assistLevel, onComplete }: Play
       </div>
 
       {/* Feedback. */}
-      {feedback && (
-        <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '1.1rem', fontWeight: 700, color: feedback.color }}>
-          {feedback.text}
-        </p>
-      )}
+      <AnswerFeedback
+        outcome={result}
+        wasCleanCorrect={!base.hadMistake}
+        profile={p}
+        wrongMessage="Try again — that order isn’t quite right."
+        incompleteMessage="Please select more answers."
+      />
     </section>
   );
 }

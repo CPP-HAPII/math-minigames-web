@@ -24,3 +24,33 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Correct-answer feedback (components/games/AnswerFeedback.tsx). Kept short
+   (~450ms) on purpose — it needs to finish painting inside PlayContent's
+   FEEDBACK_DELAY_MS (500ms) window before the series advances to the next
+   question, not run past it. */
+@keyframes confetti-piece {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--confetti-dx), var(--confetti-dy)) rotate(var(--confetti-rot));
+    opacity: 0;
+  }
+}
+
+@keyframes feedback-pop {
+  0% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
