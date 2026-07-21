@@ -8,6 +8,7 @@ import { themes } from '@/lib/themes';
 import { useGameBase } from '@/lib/hooks/useGameBase';
 import AnswerFeedback from './AnswerFeedback';
 import TranslateButton from './TranslateButton';
+import HoverTranslatedText from './HoverTranslatedText';
 
 interface JumbleGameProps {
   question: JumbleGameData;
@@ -128,9 +129,7 @@ export default function JumbleGame({ question, assistLevel, onComplete }: Jumble
         `assistLevel` will drive that wrapper. This is the clean spot for it.
       */}
       <div style={{ ...card, textAlign: 'center' }} data-assist-level={assistLevel}>
-        <p style={{ fontSize: '1.6rem', margin: 0, color: p.contrastTextColor }}>
-          {question.displayedProblem}
-        </p>
+        <HoverTranslatedText text={question.displayedProblem} profile={p} />
         <TranslateButton sourceText={question.displayedProblem} profile={p} />
       </div>
 

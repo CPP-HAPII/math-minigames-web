@@ -10,6 +10,7 @@ import { useGameBase } from '@/lib/hooks/useGameBase';
 import { useSpeechRecognition } from '@/lib/hooks/useSpeechRecognition';
 import AnswerFeedback from './AnswerFeedback';
 import TranslateButton from './TranslateButton';
+import HoverTranslatedText from './HoverTranslatedText';
 
 interface ReadAloudGameProps {
   question: ReadAloudGameData;
@@ -151,9 +152,7 @@ export default function ReadAloudGame({ question, assistLevel, onComplete }: Rea
         drive that wrapper. This is the clean spot for it.
       */}
       <div style={{ ...card, textAlign: 'center' }} data-assist-level={assistLevel}>
-        <p style={{ fontSize: '1.6rem', margin: 0, color: p.contrastTextColor }}>
-          {question.displayedProblem}
-        </p>
+        <HoverTranslatedText text={question.displayedProblem} profile={p} />
         {question.additionalInstructions && (
           <p style={{ fontSize: '0.9rem', margin: '0.6rem 0 0', opacity: 0.8 }}>
             {question.additionalInstructions}
