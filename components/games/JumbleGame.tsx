@@ -7,6 +7,7 @@ import { useThemeStore, selectActiveProfile } from '@/lib/stores/themeStore';
 import { themes } from '@/lib/themes';
 import { useGameBase } from '@/lib/hooks/useGameBase';
 import AnswerFeedback from './AnswerFeedback';
+import TranslateButton from './TranslateButton';
 
 interface JumbleGameProps {
   question: JumbleGameData;
@@ -130,6 +131,7 @@ export default function JumbleGame({ question, assistLevel, onComplete }: Jumble
         <p style={{ fontSize: '1.6rem', margin: 0, color: p.contrastTextColor }}>
           {question.displayedProblem}
         </p>
+        <TranslateButton sourceText={question.displayedProblem} profile={p} />
       </div>
 
       {/* Your answer — selected tokens in order. */}

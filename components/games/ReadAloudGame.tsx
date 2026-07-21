@@ -9,6 +9,7 @@ import { themes } from '@/lib/themes';
 import { useGameBase } from '@/lib/hooks/useGameBase';
 import { useSpeechRecognition } from '@/lib/hooks/useSpeechRecognition';
 import AnswerFeedback from './AnswerFeedback';
+import TranslateButton from './TranslateButton';
 
 interface ReadAloudGameProps {
   question: ReadAloudGameData;
@@ -158,6 +159,7 @@ export default function ReadAloudGame({ question, assistLevel, onComplete }: Rea
             {question.additionalInstructions}
           </p>
         )}
+        <TranslateButton sourceText={question.displayedProblem} profile={p} />
       </div>
 
       {/* Speech controls + live transcript. */}

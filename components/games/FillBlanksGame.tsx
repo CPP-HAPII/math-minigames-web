@@ -7,6 +7,7 @@ import { useThemeStore, selectActiveProfile } from '@/lib/stores/themeStore';
 import { themes } from '@/lib/themes';
 import { useGameBase } from '@/lib/hooks/useGameBase';
 import AnswerFeedback from './AnswerFeedback';
+import TranslateButton from './TranslateButton';
 
 interface FillBlanksGameProps {
   question: FillBlanksGameData;
@@ -184,6 +185,7 @@ export default function FillBlanksGame({ question, assistLevel, onComplete }: Fi
         <p style={{ fontSize: '1.6rem', margin: 0, color: p.contrastTextColor }}>
           {question.displayedProblem}
         </p>
+        <TranslateButton sourceText={question.displayedProblem} profile={p} />
       </div>
 
       {/* Your answer — blankForm with the picked answers dropped into the blanks. */}

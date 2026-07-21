@@ -8,6 +8,7 @@ import { themes } from '@/lib/themes';
 import { useGameBase } from '@/lib/hooks/useGameBase';
 import { useAudioPlayback } from '@/lib/hooks/useAudioPlayback';
 import AnswerFeedback from './AnswerFeedback';
+import TranslateButton from './TranslateButton';
 
 interface PlaybackGameProps {
   question: PlaybackGameData;
@@ -199,6 +200,7 @@ export default function PlaybackGame({ question, assistLevel, onComplete }: Play
         {playbackStatusText && (
           <p style={{ margin: '0.6rem 0 0', fontSize: '0.9rem', opacity: 0.85 }}>{playbackStatusText}</p>
         )}
+        <TranslateButton sourceText={question.audioTranscript} profile={p} />
       </div>
 
       {/* Your answer — selected tokens in order. */}

@@ -28,6 +28,16 @@ interface SessionState {
   difficulty: Difficulty;
   seriesStartedAt: number | null;
 
+  /**
+   * Assist-interaction events collected for the question currently on screen
+   * (e.g. 'translation_displayed'), plus the highest-priority assist level
+   * implied by them (novice > intermediate > advanced — see ASSIST_PRIORITY).
+   * Cleared by submitAnswer() once folded into that question's QuestionLog,
+   * so at any moment this only ever describes the in-progress question.
+   */
+  pendingAssistInteractions: string[];
+  pendingAssistLevel: AssistLevel | null;
+
   // Persistent across sessions
   highScore: number;
 
@@ -42,18 +52,20 @@ interface SessionState {
   updateHighScore: () => void;
 
   /**
+   * Record a language-assist interaction for the in-progress question (e.g.
+   * a translation being triggered). Mirrors GamePageState.recordAssistUsage()
+   * in game_page.dart: interactions accumulate, and pendingAssistLevel only
+   * ever moves up in priority, never down, within a single question.
+   */
+  recordAssistInteraction: (interaction: string, level: AssistLevel) => void;
+
+  /**
    * Score + log a completed question and advance to the next one.
    * wasCorrect follows the useGameBase onComplete(!hadMistake) contract:
    * true = first-try correct, false = correct only after a mistake. See
    * correctCount / correctedAfterMistakeCount above for what each counts.
    */
-  submitAnswer: (
-    question: AnyGameData,
-    wasCorrect: boolean,
-    elapsedSeconds: number,
-    assistUsed?: AssistLevel | null,
-    assistInteractions?: string[],
-  ) => void;
+  submitAnswer: (question: AnyGameData, wasCorrect: boolean, elapsedSeconds: number) => void;
 
   /** Updates the high score and returns the QuizAttempt shape for Stage 10 to persist. */
   completeSeries: () => QuizAttempt;
@@ -69,7 +81,12 @@ const SESSION_DEFAULTS = {
   currentIndex: 0,
   difficulty: 'random' as Difficulty,
   seriesStartedAt: null as number | null,
+  pendingAssistInteractions: [] as string[],
+  pendingAssistLevel: null as AssistLevel | null,
 };
+
+/** novice (full assist) > intermediate (half) > advanced (low) — mirrors game_page.dart's _assistPriority(). */
+const ASSIST_PRIORITY: Record<AssistLevel, number> = { advanced: 1, intermediate: 2, novice: 3 };
 
 export const useSessionStore = create<SessionState>()(
   persist(
@@ -96,16 +113,35 @@ export const useSessionStore = create<SessionState>()(
         if (score > highScore) set({ highScore: score });
       },
 
-      submitAnswer: (question, wasCorrect, elapsedSeconds, assistUsed = null, assistInteractions = []) => {
-        const { addQuestionLog, increaseScore, increaseCorrect, increaseCorrectedAfterMistake, setProgress } = get();
+      recordAssistInteraction: (interaction, level) =>
+        set((s) => ({
+          pendingAssistInteractions: s.pendingAssistInteractions.includes(interaction)
+            ? s.pendingAssistInteractions
+            : [...s.pendingAssistInteractions, interaction],
+          pendingAssistLevel:
+            s.pendingAssistLevel === null || ASSIST_PRIORITY[level] > ASSIST_PRIORITY[s.pendingAssistLevel]
+              ? level
+              : s.pendingAssistLevel,
+        })),
+
+      submitAnswer: (question, wasCorrect, elapsedSeconds) => {
+        const {
+          addQuestionLog,
+          increaseScore,
+          increaseCorrect,
+          increaseCorrectedAfterMistake,
+          setProgress,
+          pendingAssistInteractions,
+          pendingAssistLevel,
+        } = get();
 
         addQuestionLog({
           questionId: question.id,
           skills: question.skills,
           result: wasCorrect,
           timeTakenInSeconds: elapsedSeconds,
-          assistUsed,
-          assistInteractions,
+          assistUsed: pendingAssistLevel,
+          assistInteractions: pendingAssistInteractions,
         });
         increaseScore(question.score);
         if (wasCorrect) {
@@ -116,7 +152,7 @@ export const useSessionStore = create<SessionState>()(
 
         const { questions, currentIndex } = get();
         const nextIndex = currentIndex + 1;
-        set({ currentIndex: nextIndex });
+        set({ currentIndex: nextIndex, pendingAssistInteractions: [], pendingAssistLevel: null });
         setProgress(questions.length > 0 ? nextIndex / questions.length : 1);
       },
 
