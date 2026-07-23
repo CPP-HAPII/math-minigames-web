@@ -9,6 +9,7 @@ import { useGameBase } from '@/lib/hooks/useGameBase';
 import AnswerFeedback from './AnswerFeedback';
 import TranslateButton from './TranslateButton';
 import HoverTranslatedText from './HoverTranslatedText';
+import SpeakQuestionButton from './SpeakQuestionButton';
 
 interface TypingGameProps {
   question: TypingGameData;
@@ -109,13 +110,25 @@ export default function TypingGame({ question, assistLevel, onComplete }: Typing
       </div>
 
       {/*
-        Problem text — rendered plainly for now. The language-assist UI
-        (translation, hover glossary, TTS) wraps this in Stages 12–14;
-        `assistLevel` will drive that wrapper. This is the clean spot for it.
+        Problem text — hover-translate is always available. The rest of the
+        assist card (speak-question, translate/auto-translate) is gated by
+        assistLevel, mirroring the Dart `if (assistLevel == novice ||
+        intermediate)` wrapper — hidden entirely for advanced/"Low Assist".
       */}
       <div style={{ ...card, textAlign: 'center' }} data-assist-level={assistLevel}>
         <HoverTranslatedText text={question.displayedProblem} profile={p} />
-        <TranslateButton sourceText={question.displayedProblem} profile={p} />
+        {assistLevel !== 'advanced' && (
+          <>
+            {assistLevel === 'novice' && (
+              <SpeakQuestionButton text={question.displayedProblem} profile={p} />
+            )}
+            <TranslateButton
+              sourceText={question.displayedProblem}
+              profile={p}
+              autoTranslate={assistLevel === 'novice'}
+            />
+          </>
+        )}
       </div>
 
       {/* Answer input. */}

@@ -11,6 +11,7 @@ import { useSpeechRecognition } from '@/lib/hooks/useSpeechRecognition';
 import AnswerFeedback from './AnswerFeedback';
 import TranslateButton from './TranslateButton';
 import HoverTranslatedText from './HoverTranslatedText';
+import SpeakQuestionButton from './SpeakQuestionButton';
 
 interface ReadAloudGameProps {
   question: ReadAloudGameData;
@@ -147,9 +148,9 @@ export default function ReadAloudGame({ question, assistLevel, onComplete }: Rea
       {/*
         Problem text — shown upfront, unlike Playback (Read Aloud is a
         speak-the-answer exercise, not a listening exercise; the question
-        itself is read, not heard). The language-assist UI (translation,
-        hover glossary, TTS) wraps this in Stages 12–14; `assistLevel` will
-        drive that wrapper. This is the clean spot for it.
+        itself is read, not heard). Hover-translate is always available; the
+        rest of the assist card is gated by assistLevel, mirroring the Dart
+        `if (assistLevel == novice || intermediate)` wrapper.
       */}
       <div style={{ ...card, textAlign: 'center' }} data-assist-level={assistLevel}>
         <HoverTranslatedText text={question.displayedProblem} profile={p} />
@@ -158,7 +159,18 @@ export default function ReadAloudGame({ question, assistLevel, onComplete }: Rea
             {question.additionalInstructions}
           </p>
         )}
-        <TranslateButton sourceText={question.displayedProblem} profile={p} />
+        {assistLevel !== 'advanced' && (
+          <>
+            {assistLevel === 'novice' && (
+              <SpeakQuestionButton text={question.displayedProblem} profile={p} />
+            )}
+            <TranslateButton
+              sourceText={question.displayedProblem}
+              profile={p}
+              autoTranslate={assistLevel === 'novice'}
+            />
+          </>
+        )}
       </div>
 
       {/* Speech controls + live transcript. */}

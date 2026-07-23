@@ -200,7 +200,13 @@ export default function PlaybackGame({ question, assistLevel, onComplete }: Play
         {playbackStatusText && (
           <p style={{ margin: '0.6rem 0 0', fontSize: '0.9rem', opacity: 0.85 }}>{playbackStatusText}</p>
         )}
-        <TranslateButton sourceText={question.audioTranscript} profile={p} />
+        {assistLevel !== 'advanced' && (
+          <TranslateButton
+            sourceText={question.audioTranscript}
+            profile={p}
+            autoTranslate={assistLevel === 'novice'}
+          />
+        )}
       </div>
 
       {/* Your answer — selected tokens in order. */}

@@ -9,17 +9,31 @@ interface TranslateButtonProps {
   profile: ColorProfile;
   /** Google Translate target-language code. Matches the Flutter reference's default. */
   targetLanguage?: string;
+  /**
+   * Fire translate() once on mount instead of waiting for a click — the
+   * novice/"Full Assist" case. Callers are responsible for not rendering
+   * this component at all for advanced/"Low Assist" (see the assist-card
+   * gate at each game's callsite), matching the Dart
+   * `if (assistLevel == novice || intermediate)` wrapper.
+   */
+  autoTranslate?: boolean;
 }
 
 /**
- * Manual-trigger translate button + result text, shown unconditionally
- * regardless of assistLevel (per product decision — see Stage 12 report).
- * Ports the button-and-text half of the Flutter reference's
- * TranslateButtonAndText; the "Play translation" TTS half is out of scope
- * here (separate stage), so it isn't rendered.
+ * Manual/auto-trigger translate button + result text + "Play translation"
+ * TTS, gated by the caller per assistLevel (see JumbleGame/etc.). Ports
+ * TranslateButtonAndText from the Flutter reference in full: the Translate
+ * button, the translated text, and the "Play translation" button, which
+ * appears once a translation exists regardless of autoTranslate/assistLevel
+ * (the Dart widget doesn't gate it either).
  */
-export default function TranslateButton({ sourceText, profile: p, targetLanguage = 'es' }: TranslateButtonProps) {
-  const { status, translated, translate } = useTranslation(sourceText, targetLanguage);
+export default function TranslateButton({
+  sourceText,
+  profile: p,
+  targetLanguage = 'es',
+  autoTranslate = false,
+}: TranslateButtonProps) {
+  const { status, translated, translate, speakTranslation } = useTranslation(sourceText, targetLanguage, autoTranslate);
 
   const button: React.CSSProperties = {
     backgroundColor: p.headerColor,
@@ -35,9 +49,16 @@ export default function TranslateButton({ sourceText, profile: p, targetLanguage
 
   return (
     <div style={{ marginTop: '0.75rem', textAlign: 'center' }}>
-      <button onClick={translate} disabled={status === 'loading'} style={button}>
-        {status === 'loading' ? 'Translating…' : 'Translate'}
-      </button>
+      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+        <button onClick={translate} disabled={status === 'loading'} style={button}>
+          {status === 'loading' ? 'Translating…' : 'Translate'}
+        </button>
+        {status === 'shown' && translated && (
+          <button onClick={speakTranslation} style={button}>
+            Play translation
+          </button>
+        )}
+      </div>
       {status === 'shown' && translated && (
         <p style={{ fontSize: '1rem', margin: '0.6rem 0 0', color: p.contrastTextColor }}>
           Translation: {translated}
