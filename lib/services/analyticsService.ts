@@ -7,6 +7,29 @@ import type { QuestionAttemptRow } from './analyticsDataService';
  * scope-agnostic: pass the whole roster for a class-wide view, or pre-filter
  * rows to one userId for a single-student view, using the same function
  * either way (see computeSkillAccuracy / computeAverageTimeBySkill).
+ *
+ * CACHING DECISION (evaluated and deliberately deferred, not overlooked):
+ * this recomputes everything from scratch on every call — fetchAllQuestionRows()
+ * + these functions, no persisted/cached summary docs. That's intentional:
+ *   - This repo has zero Cloud Functions infrastructure today (no
+ *     firebase.json, no functions/ dir, no firebase-admin/firebase-functions,
+ *     no firestore.rules). A scheduled- or on-write-triggered summary-doc
+ *     cache (e.g. studentAnalytics/{userId}) would mean standing up that
+ *     infra from scratch, not just adding a service file.
+ *   - Real dataset today: ~3 students / ~10 rows. Even a full classroom over
+ *     a semester (~30 students x ~50 attempts x ~10 questions) is ~15k small
+ *     docs — a collectionGroup('attempts') read at that size is still
+ *     sub-second and a few thousand read-ops, well inside Firestore's free tier.
+ *   - No teacher-portal UI consumes this yet, so there's no real access
+ *     pattern to design a cache around.
+ *   - A cache is a second source of truth that can silently drift from the
+ *     raw QuestionLog data (failed trigger, corrected data post-hoc);
+ *     on-demand computation is always exactly correct by construction.
+ * Revisit if: a single fetchAllQuestionRows() + compute pass is measured
+ * taking more than ~1-2s against real data, total attempt documents cross
+ * roughly 10k-50k, or a real teacher-portal UI reveals a repeated-query
+ * pattern (e.g. the same class dashboard reloaded every few seconds) that
+ * would actually benefit from a precomputed summary doc.
  */
 
 // ─── Shared result types ────────────────────────────────────────────────────
