@@ -177,6 +177,7 @@ export default function SkillBarChart({ data, profile: p, axisFormatter, domain,
         <XAxis
           type="number"
           domain={domain ?? [0, (max: number) => Math.ceil(max * 1.15)]}
+          allowDecimals={false}
           tickFormatter={axisFormatter}
           tick={{ fontSize: 11, fill: p.contrastTextColor, fillOpacity: 0.7 }}
           axisLine={{ stroke: p.disabledButtonColor, strokeOpacity: 0.4 }}

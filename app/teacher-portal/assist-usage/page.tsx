@@ -6,6 +6,7 @@ import { themes } from '@/lib/themes';
 import type { AssistLevel } from '@/lib/types';
 import { fetchAllQuestionRows, type QuestionAttemptRow } from '@/lib/services/analyticsDataService';
 import { computeAssistUsageByStudent, computeInteractionTypeCounts } from '@/lib/services/analyticsService';
+import SkillBarChart, { type SkillBarDatum } from '@/components/teacher/charts/SkillBarChart';
 
 type Status = 'loading' | 'loaded' | 'error';
 
@@ -163,6 +164,36 @@ export default function AssistUsagePage() {
         .sort((a, b) => b.count - a.count)
     : [];
 
+  // count/total → SkillBarDatum. No status concept applies to counts here
+  // (nothing is "weak"), so `highlighted` stays unset on every row.
+  const toCountDatum = (label: string, count: number, total: number): SkillBarDatum => ({
+    skill: label,
+    value: count,
+    valueLabel: `${count}`,
+    detailLabel: `${count}/${total} question${total === 1 ? '' : 's'} (${total === 0 ? 0 : Math.round((count / total) * 100)}%)`,
+  });
+
+  const classInteractionChartData: SkillBarDatum[] = classInteractionCounts.map((ic) =>
+    toCountDatum(ic.interaction, ic.count, rows.length),
+  );
+
+  const tierChartData: SkillBarDatum[] = [
+    ...TIER_LABELS.map(({ key, label }) => toCountDatum(label, selectedUsage?.tierCounts[key] ?? 0, selectedUsage?.totalQuestions ?? 0)),
+    toCountDatum('No assist used', selectedUsage?.noAssistCount ?? 0, selectedUsage?.totalQuestions ?? 0),
+  ];
+
+  const selectedInteractionChartData: SkillBarDatum[] = selectedUsage
+    ? selectedInteractionCounts.map((ic) => toCountDatum(ic.interaction, ic.count, selectedUsage.totalQuestions))
+    : [];
+
+  const detailsSummary: React.CSSProperties = {
+    fontSize: '0.8rem',
+    color: p.contrastTextColor,
+    opacity: 0.75,
+    cursor: 'pointer',
+    marginTop: '0.75rem',
+  };
+
   return (
     <div>
       {/* ── Class-wide: most common interaction types ──────────────────── */}
@@ -175,14 +206,25 @@ export default function AssistUsagePage() {
             No assist interactions recorded yet.
           </p>
         ) : (
-          <ul style={rowList}>
-            {classInteractionCounts.map((ic) => (
-              <li key={ic.interaction} style={row(p.contrastTextColor)}>
-                <span>{ic.interaction}</span>
-                <span>{ic.count}</span>
-              </li>
-            ))}
-          </ul>
+          <>
+            <SkillBarChart
+              data={classInteractionChartData}
+              profile={p}
+              axisFormatter={(v) => `${Math.round(v)}`}
+              highlightedWord=""
+            />
+            <details>
+              <summary style={detailsSummary}>View as table</summary>
+              <ul style={{ ...rowList, marginTop: '0.5rem' }}>
+                {classInteractionCounts.map((ic) => (
+                  <li key={ic.interaction} style={row(p.contrastTextColor)}>
+                    <span>{ic.interaction}</span>
+                    <span>{ic.count}</span>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          </>
         )}
       </div>
 
@@ -219,18 +261,27 @@ export default function AssistUsagePage() {
             <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.contrastTextColor }}>
               Assist-Tier Breakdown
             </h2>
-            <ul style={rowList}>
-              {TIER_LABELS.map(({ key, label }) => (
-                <li key={key} style={row(p.contrastTextColor)}>
-                  <span>{label}</span>
-                  <span>{selectedUsage?.tierCounts[key] ?? 0}</span>
+            <SkillBarChart
+              data={tierChartData}
+              profile={p}
+              axisFormatter={(v) => `${Math.round(v)}`}
+              highlightedWord=""
+            />
+            <details>
+              <summary style={detailsSummary}>View as table</summary>
+              <ul style={{ ...rowList, marginTop: '0.5rem' }}>
+                {TIER_LABELS.map(({ key, label }) => (
+                  <li key={key} style={row(p.contrastTextColor)}>
+                    <span>{label}</span>
+                    <span>{selectedUsage?.tierCounts[key] ?? 0}</span>
+                  </li>
+                ))}
+                <li style={row(p.contrastTextColor)}>
+                  <span>No assist used</span>
+                  <span>{selectedUsage?.noAssistCount ?? 0}</span>
                 </li>
-              ))}
-              <li style={row(p.contrastTextColor)}>
-                <span>No assist used</span>
-                <span>{selectedUsage?.noAssistCount ?? 0}</span>
-              </li>
-            </ul>
+              </ul>
+            </details>
           </div>
 
           <div style={card}>
@@ -242,14 +293,25 @@ export default function AssistUsagePage() {
                 No assist interactions recorded for this student.
               </p>
             ) : (
-              <ul style={rowList}>
-                {selectedInteractionCounts.map((ic) => (
-                  <li key={ic.interaction} style={row(p.contrastTextColor)}>
-                    <span>{ic.interaction}</span>
-                    <span>{ic.count}</span>
-                  </li>
-                ))}
-              </ul>
+              <>
+                <SkillBarChart
+                  data={selectedInteractionChartData}
+                  profile={p}
+                  axisFormatter={(v) => `${Math.round(v)}`}
+                  highlightedWord=""
+                />
+                <details>
+                  <summary style={detailsSummary}>View as table</summary>
+                  <ul style={{ ...rowList, marginTop: '0.5rem' }}>
+                    {selectedInteractionCounts.map((ic) => (
+                      <li key={ic.interaction} style={row(p.contrastTextColor)}>
+                        <span>{ic.interaction}</span>
+                        <span>{ic.count}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </>
             )}
           </div>
         </>
