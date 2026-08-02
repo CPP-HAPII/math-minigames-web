@@ -5,6 +5,7 @@ import { useThemeStore, selectActiveProfile } from '@/lib/stores/themeStore';
 import { themes } from '@/lib/themes';
 import { fetchAllQuestionRows, type QuestionAttemptRow } from '@/lib/services/analyticsDataService';
 import { computeSkillAccuracyByStudent, detectWeakTopics, computeAverageTimeBySkill } from '@/lib/services/analyticsService';
+import SkillBarChart, { type SkillBarDatum } from '@/components/teacher/charts/SkillBarChart';
 
 /** Matches detectWeakTopics' own default — kept as a named constant so the heading text and the call stay in sync. */
 const WEAK_TOPIC_THRESHOLD = 0.6;
@@ -156,6 +157,29 @@ export default function StudentDetailPage() {
   const selectedTiming = selectedUserId ? computeAverageTimeBySkill(selectedRows) : [];
   const selectedWeakSkillSet = new Set(selectedWeakTopics.map((w) => w.skill));
 
+  const accuracyChartData: SkillBarDatum[] = selectedAccuracy.map((a) => ({
+    skill: a.skill,
+    value: Math.round(a.accuracy * 100),
+    valueLabel: `${Math.round(a.accuracy * 100)}%`,
+    detailLabel: `${a.correct}/${a.attempts} attempt${a.attempts === 1 ? '' : 's'} correct`,
+    highlighted: selectedWeakSkillSet.has(a.skill),
+  }));
+
+  const timingChartData: SkillBarDatum[] = selectedTiming.map((t) => ({
+    skill: t.skill,
+    value: t.averageTimeTakenInSeconds,
+    valueLabel: `${t.averageTimeTakenInSeconds.toFixed(1)}s`,
+    detailLabel: `${t.attempts} attempt${t.attempts === 1 ? '' : 's'}`,
+  }));
+
+  const detailsSummary: React.CSSProperties = {
+    fontSize: '0.8rem',
+    color: p.contrastTextColor,
+    opacity: 0.75,
+    cursor: 'pointer',
+    marginTop: '0.75rem',
+  };
+
   return (
     <div>
       <div style={card}>
@@ -195,19 +219,31 @@ export default function StudentDetailPage() {
                 No skill data recorded for this student.
               </p>
             ) : (
-              <ul style={rowList}>
-                {selectedAccuracy.map((a) => (
-                  <li
-                    key={a.skill}
-                    style={row(selectedWeakSkillSet.has(a.skill) ? p.clearAnswerButtonColor : p.contrastTextColor)}
-                  >
-                    <span>{a.skill}</span>
-                    <span>
-                      {a.correct}/{a.attempts} ({Math.round(a.accuracy * 100)}%)
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <>
+                <SkillBarChart
+                  data={accuracyChartData}
+                  profile={p}
+                  axisFormatter={(v) => `${v}%`}
+                  domain={[0, 100]}
+                  highlightedWord="weak"
+                />
+                <details>
+                  <summary style={detailsSummary}>View as table</summary>
+                  <ul style={{ ...rowList, marginTop: '0.5rem' }}>
+                    {selectedAccuracy.map((a) => (
+                      <li
+                        key={a.skill}
+                        style={row(selectedWeakSkillSet.has(a.skill) ? p.clearAnswerButtonColor : p.contrastTextColor)}
+                      >
+                        <span>{a.skill}</span>
+                        <span>
+                          {a.correct}/{a.attempts} ({Math.round(a.accuracy * 100)}%)
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </>
             )}
           </div>
 
@@ -242,16 +278,27 @@ export default function StudentDetailPage() {
                 No timing data recorded for this student.
               </p>
             ) : (
-              <ul style={rowList}>
-                {selectedTiming.map((t) => (
-                  <li key={t.skill} style={row(p.contrastTextColor)}>
-                    <span>{t.skill}</span>
-                    <span>
-                      {t.averageTimeTakenInSeconds.toFixed(1)}s avg ({t.attempts} attempt{t.attempts === 1 ? '' : 's'})
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <>
+                <SkillBarChart
+                  data={timingChartData}
+                  profile={p}
+                  axisFormatter={(v) => `${v}s`}
+                  highlightedWord="weak"
+                />
+                <details>
+                  <summary style={detailsSummary}>View as table</summary>
+                  <ul style={{ ...rowList, marginTop: '0.5rem' }}>
+                    {selectedTiming.map((t) => (
+                      <li key={t.skill} style={row(p.contrastTextColor)}>
+                        <span>{t.skill}</span>
+                        <span>
+                          {t.averageTimeTakenInSeconds.toFixed(1)}s avg ({t.attempts} attempt{t.attempts === 1 ? '' : 's'})
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </>
             )}
           </div>
         </>
