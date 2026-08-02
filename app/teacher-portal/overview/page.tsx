@@ -5,6 +5,7 @@ import { useThemeStore, selectActiveProfile } from '@/lib/stores/themeStore';
 import { themes } from '@/lib/themes';
 import { fetchAllQuestionRows, type QuestionAttemptRow } from '@/lib/services/analyticsDataService';
 import { computeSkillAccuracy, detectWeakTopics, computeAverageTimeBySkill } from '@/lib/services/analyticsService';
+import SkillBarChart, { type SkillBarDatum } from '@/components/teacher/charts/SkillBarChart';
 
 /** Matches detectWeakTopics' own default — kept as a named constant so the heading text and the call stay in sync. */
 const WEAK_TOPIC_THRESHOLD = 0.6;
@@ -138,6 +139,29 @@ export default function ClassOverviewPage() {
   const timing = computeAverageTimeBySkill(rows);
   const weakSkillSet = new Set(weakTopics.map((w) => w.skill));
 
+  const accuracyChartData: SkillBarDatum[] = accuracy.map((a) => ({
+    skill: a.skill,
+    value: Math.round(a.accuracy * 100),
+    valueLabel: `${Math.round(a.accuracy * 100)}%`,
+    detailLabel: `${a.correct}/${a.attempts} attempt${a.attempts === 1 ? '' : 's'} correct`,
+    highlighted: weakSkillSet.has(a.skill),
+  }));
+
+  const timingChartData: SkillBarDatum[] = timing.map((t) => ({
+    skill: t.skill,
+    value: t.averageTimeTakenInSeconds,
+    valueLabel: `${t.averageTimeTakenInSeconds.toFixed(1)}s`,
+    detailLabel: `${t.attempts} attempt${t.attempts === 1 ? '' : 's'}`,
+  }));
+
+  const detailsSummary: React.CSSProperties = {
+    fontSize: '0.8rem',
+    color: p.contrastTextColor,
+    opacity: 0.75,
+    cursor: 'pointer',
+    marginTop: '0.75rem',
+  };
+
   return (
     <div>
       <div style={card}>
@@ -151,16 +175,26 @@ export default function ClassOverviewPage() {
         <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.contrastTextColor }}>
           Accuracy by Skill
         </h2>
-        <ul style={rowList}>
-          {accuracy.map((a) => (
-            <li key={a.skill} style={row(weakSkillSet.has(a.skill) ? p.clearAnswerButtonColor : p.contrastTextColor)}>
-              <span>{a.skill}</span>
-              <span>
-                {a.correct}/{a.attempts} ({Math.round(a.accuracy * 100)}%)
-              </span>
-            </li>
-          ))}
-        </ul>
+        <SkillBarChart
+          data={accuracyChartData}
+          profile={p}
+          axisFormatter={(v) => `${v}%`}
+          domain={[0, 100]}
+          highlightedWord="weak"
+        />
+        <details>
+          <summary style={detailsSummary}>View as table</summary>
+          <ul style={{ ...rowList, marginTop: '0.5rem' }}>
+            {accuracy.map((a) => (
+              <li key={a.skill} style={row(weakSkillSet.has(a.skill) ? p.clearAnswerButtonColor : p.contrastTextColor)}>
+                <span>{a.skill}</span>
+                <span>
+                  {a.correct}/{a.attempts} ({Math.round(a.accuracy * 100)}%)
+                </span>
+              </li>
+            ))}
+          </ul>
+        </details>
       </div>
 
       <div style={card}>
@@ -189,16 +223,25 @@ export default function ClassOverviewPage() {
         <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.contrastTextColor }}>
           Average Time per Skill
         </h2>
-        <ul style={rowList}>
-          {timing.map((t) => (
-            <li key={t.skill} style={row(p.contrastTextColor)}>
-              <span>{t.skill}</span>
-              <span>
-                {t.averageTimeTakenInSeconds.toFixed(1)}s avg ({t.attempts} attempt{t.attempts === 1 ? '' : 's'})
-              </span>
-            </li>
-          ))}
-        </ul>
+        <SkillBarChart
+          data={timingChartData}
+          profile={p}
+          axisFormatter={(v) => `${v}s`}
+          highlightedWord="weak"
+        />
+        <details>
+          <summary style={detailsSummary}>View as table</summary>
+          <ul style={{ ...rowList, marginTop: '0.5rem' }}>
+            {timing.map((t) => (
+              <li key={t.skill} style={row(p.contrastTextColor)}>
+                <span>{t.skill}</span>
+                <span>
+                  {t.averageTimeTakenInSeconds.toFixed(1)}s avg ({t.attempts} attempt{t.attempts === 1 ? '' : 's'})
+                </span>
+              </li>
+            ))}
+          </ul>
+        </details>
       </div>
     </div>
   );
