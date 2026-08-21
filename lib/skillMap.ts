@@ -21,6 +21,7 @@ export const SKILL_MAP: Record<string, string> = {
   three_or_more_place_multiplication:   'Multiplication with Three or More Digits/Places',
   four_or_more_number_places:           'Understanding Numbers with Four or More Digits/Places',
   four_or_more_place_addition:          'Addition with Four or More Digits/Places',
+  four_or_more_place_subtraction:       'Subtraction with Four or More Digits/Places',
   two_place_addition:                   'Addition with Two Digits/Places',
   written_three_number_places:          'Writing Numbers with Three Digits/Places in Written Form',
   fractions:                            'Fraction Handling',
