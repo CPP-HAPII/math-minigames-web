@@ -24,6 +24,15 @@ export interface GameData {
   tags: string[];
   gameType: GameType;
   difficulty: Difficulty;
+  /**
+   * Level (1-5) and sublevel key (e.g. "2.2") from the levels/sublevels
+   * migration. Display names are NOT duplicated here — look them up from
+   * LEVEL_MAP / SUBLEVEL_MAP in lib/levelMap.ts, the single place that owns
+   * those labels. 0 / '' when a question predates the migration and has no
+   * level/sublevel assigned yet.
+   */
+  level: number;
+  sublevel: string;
 }
 
 // ─── Per-type interfaces ──────────────────────────────────────────────────────

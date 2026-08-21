@@ -258,6 +258,17 @@ function parseStringArray(raw: unknown): string[] {
   return (raw as unknown[]).map(String);
 }
 
+/** 0 when absent/non-numeric — questions that predate the levels/sublevels migration. */
+function parseLevel(raw: unknown): number {
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** '' when absent — questions that predate the levels/sublevels migration. */
+function parseSublevel(raw: unknown): string {
+  return String(raw ?? '');
+}
+
 function parseJumble(doc: Record<string, unknown>): JumbleGameData {
   return {
     gameType: 'jumble',
@@ -266,6 +277,8 @@ function parseJumble(doc: Record<string, unknown>): JumbleGameData {
     skills: parseStringArray(doc['skills']),
     tags: parseStringArray(doc['tags']),
     difficulty: parseDifficulty(doc['difficulty']),
+    level: parseLevel(doc['level']),
+    sublevel: parseSublevel(doc['sublevel']),
     displayedProblem: String(doc['displayedProblem'] ?? ''),
     multiAcceptedAnswers: normalizeNestedAnswers(doc['multiAcceptedAnswers']),
     writtenPrompt: String(
@@ -283,6 +296,8 @@ function parsePlayback(doc: Record<string, unknown>): PlaybackGameData {
     skills: parseStringArray(doc['skills']),
     tags: parseStringArray(doc['tags']),
     difficulty: parseDifficulty(doc['difficulty']),
+    level: parseLevel(doc['level']),
+    sublevel: parseSublevel(doc['sublevel']),
     webAudioLink: String(doc['webAudioLink'] ?? ''),
     audioTranscript: String(doc['audioTranscript'] ?? ''),
     multiAcceptedAnswers: normalizeNestedAnswers(doc['multiAcceptedAnswers']),
@@ -312,6 +327,8 @@ function parseReadAloud(doc: Record<string, unknown>): ReadAloudGameData {
     skills: parseStringArray(doc['skills']),
     tags: parseStringArray(doc['tags']),
     difficulty: parseDifficulty(doc['difficulty']),
+    level: parseLevel(doc['level']),
+    sublevel: parseSublevel(doc['sublevel']),
     displayedProblem: String(doc['displayedProblem'] ?? ''),
     multiAcceptedAnswers: normalizeNestedAnswers(doc['multiAcceptedAnswers']),
     writtenPrompt: String(
@@ -331,6 +348,8 @@ function parseTyping(doc: Record<string, unknown>): TypingGameData {
     skills: parseStringArray(doc['skills']),
     tags: parseStringArray(doc['tags']),
     difficulty: parseDifficulty(doc['difficulty']),
+    level: parseLevel(doc['level']),
+    sublevel: parseSublevel(doc['sublevel']),
     displayedProblem: String(doc['displayedProblem'] ?? ''),
     // Flat string[] — one complete answer string per element. NOT normalizeNestedAnswers.
     multiAcceptedAnswers: normalizeToStringList(doc['multiAcceptedAnswers']),
@@ -351,6 +370,8 @@ function parseFillBlanks(doc: Record<string, unknown>): FillBlanksGameData {
     skills: parseStringArray(doc['skills']),
     tags: parseStringArray(doc['tags']),
     difficulty: parseDifficulty(doc['difficulty']),
+    level: parseLevel(doc['level']),
+    sublevel: parseSublevel(doc['sublevel']),
     displayedProblem: String(doc['displayedProblem'] ?? ''),
     // Flat string[] — element[i] is the correct answer for blank[i]. NOT normalizeNestedAnswers.
     multiAcceptedAnswers: normalizeToStringList(doc['multiAcceptedAnswers']),
