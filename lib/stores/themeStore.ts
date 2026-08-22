@@ -5,7 +5,7 @@ import type { ColorProfile } from '@/lib/themes';
 
 // Mirrors ThemeController from theme_controller.dart.
 // Replaces the 'theme_id' SharedPreferences key with localStorage.
-// CSS wiring is deferred — this store only holds the state.
+// Indices 0-2 map to themes (Green / Hapii / Dark green) in lib/themes.ts.
 
 interface ThemeState {
   themeIndex: number;
@@ -16,7 +16,7 @@ export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
       themeIndex: 0,
-      setTheme: (index) => set({ themeIndex: Math.max(0, Math.min(3, index)) }),
+      setTheme: (index) => set({ themeIndex: Math.max(0, Math.min(2, index)) }),
     }),
     {
       name: 'theme_id',

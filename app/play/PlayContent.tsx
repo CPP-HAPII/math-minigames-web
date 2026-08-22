@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useThemeStore, selectActiveProfile } from '@/lib/stores/themeStore';
+import { useHydrated } from '@/lib/hooks/useHydrated';
 import { useGameDataStore } from '@/lib/stores/gameDataStore';
 import { useSessionStore } from '@/lib/stores/sessionStore';
 import { useAssistStore } from '@/lib/stores/assistStore';
@@ -40,8 +41,7 @@ export default function PlayContent() {
 
   const router = useRouter();
   const profile = useThemeStore(selectActiveProfile);
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => setHydrated(true), []);
+  const hydrated = useHydrated();
   const p = hydrated ? profile : themes[0];
 
   const assistLevel = useAssistStore((s) => s.level);

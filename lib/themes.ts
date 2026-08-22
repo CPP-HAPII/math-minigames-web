@@ -1,8 +1,23 @@
-// Color values translated from constants.dart (ColorProfile / Flutter Material colors).
-// Hex strings map 1-to-1 with Color.fromARGB(255, r, g, b) values in the Flutter source.
+// Core gameplay colors are ported from constants.dart (see git history for the
+// original 4-theme Flutter mapping). The redesigned home screen (see
+// mathminigames_redesign_mockup_v2.html) introduced a distinct 3-theme system
+// (Green / Hapii / Dark green); this file now carries both: the original
+// flat gameplay palette (used by PlayContent + components/games/*) and the
+// richer "home*" fields the redesigned home screen needs (gradients, panel/
+// card colors, per-level accents). Kept as ONE profile per theme, rather than
+// two parallel arrays, so there is never a risk of the two halves drifting
+// out of sync under the same persisted themeIndex.
+
+export interface HomeLevelAccent {
+  accent: string;
+  bg: string;
+  ink: string;
+}
 
 export interface ColorProfile {
   idKey: string;
+
+  // ── Core gameplay fields (PlayContent, components/games/*, Calculator, ProgressBar) ──
   backgroundColor: string;
   headerColor: string;
   buttonColor: string;
@@ -11,60 +26,179 @@ export interface ColorProfile {
   checkAnswerButtonColor: string;
   clearAnswerButtonColor: string;
   disabledButtonColor: string;
+
+  // ── Home-screen fields (app/home/page.tsx, components/home/*) ──
+  /** Label shown on this theme's button in the switcher, e.g. 'Dark green'. */
+  homeLabel: string;
+  /** CSS `background` value (solid or gradient) for the page root. */
+  homePageBackground: string;
+  /** CSS `background` value for the header bar. */
+  homeHeaderBackground: string;
+  /** CSS `border-bottom` value for the header bar; '' when none. */
+  homeHeaderBorderBottom: string;
+  /** Solid welcome-heading text color; '' when homeWelcomeGradient is used instead. */
+  homeWelcomeColor: string;
+  /** CSS gradient for a gradient-clipped welcome heading; '' when homeWelcomeColor is used instead. */
+  homeWelcomeGradient: string;
+  /** font-family value for the welcome heading. */
+  homeWelcomeFont: string;
+  /** Language Assist panel background. */
+  homePanelBackground: string;
+  /** Continue strip + level card background. */
+  homeSurfaceBackground: string;
+  homeBorder: string;
+  /** Primary body text color on home-screen surfaces. */
+  homeInk: string;
+  /** Secondary/muted text color on home-screen surfaces. */
+  homeInkSoft: string;
+  /** Solid accent used for active option pills / "done" chips in Green and Dark green. */
+  homeAccentSolid: string;
+  /** Gradient accent used for the Play button always, and for active pills/chips in Hapii. */
+  homeAccentGradient: string;
+  /** true only for Hapii: active option pills / "done" chips use homeAccentGradient instead of homeAccentSolid. */
+  homeUseGradientForActive: boolean;
+  homeThemeButtonActiveBackground: string;
+  homeThemeButtonActiveColor: string;
+  homeThemeButtonInactiveColor: string;
+  homeThemeButtonInactiveBorder: string;
+  homeThemeButtonInactiveBackground: string;
+  /** Per-level badge/name accent, indexed 0-4 for levels 1-5. */
+  homeLevelPalette: [HomeLevelAccent, HomeLevelAccent, HomeLevelAccent, HomeLevelAccent, HomeLevelAccent];
 }
+
+const BASE_LEVEL_PALETTE: [HomeLevelAccent, HomeLevelAccent, HomeLevelAccent, HomeLevelAccent, HomeLevelAccent] = [
+  { accent: '#1D9E75', bg: '#E1F5EE', ink: '#085041' },
+  { accent: '#4CA6E0', bg: '#E6F1FB', ink: '#0C447C' },
+  { accent: '#8B7FE8', bg: '#EEEDFE', ink: '#3C3489' },
+  { accent: '#E0703C', bg: '#FAECE7', ink: '#712B13' },
+  { accent: '#E8598E', bg: '#FBEAF0', ink: '#72243E' },
+];
 
 export const greenTheme: ColorProfile = {
   idKey: 'green flavor',
-  backgroundColor: '#799c54',       // Color.fromARGB(255, 121, 156, 84)
-  headerColor: '#668446',           // Color.fromARGB(255, 102, 132, 70)
-  buttonColor: '#60c6d8',           // Color.fromARGB(255, 96, 198, 216)
-  textColor: '#000000',             // Colors.black
-  contrastTextColor: '#ffffff',     // Colors.white
-  checkAnswerButtonColor: '#6fd800', // Color.fromARGB(255, 111, 216, 0)
-  clearAnswerButtonColor: '#e04444', // Color.fromARGB(255, 224, 68, 68)
-  disabledButtonColor: '#9e9e9e',   // Colors.grey (default)
-};
 
-export const blueTheme: ColorProfile = {
-  idKey: 'blue flavor',
-  backgroundColor: '#6ea6bd',       // Color.fromARGB(255, 110, 166, 189)
-  headerColor: '#608796',           // Color.fromARGB(255, 96, 135, 150)
-  buttonColor: '#9dd9e4',           // Color.fromARGB(255, 157, 217, 228)
-  textColor: '#000000',             // Colors.black
-  contrastTextColor: '#ffffff',     // Colors.white
-  checkAnswerButtonColor: '#6fd800', // Color.fromARGB(255, 111, 216, 0)
-  clearAnswerButtonColor: '#e04444', // Color.fromARGB(255, 224, 68, 68)
+  // Unchanged from the current site — "Green" keeps gameplay looking exactly as it does today.
+  backgroundColor: '#799c54',
+  headerColor: '#668446',
+  buttonColor: '#60c6d8',
+  textColor: '#000000',
+  contrastTextColor: '#ffffff',
+  checkAnswerButtonColor: '#6fd800',
+  clearAnswerButtonColor: '#e04444',
   disabledButtonColor: '#9e9e9e',
+
+  homeLabel: 'Green',
+  homePageBackground: '#F5FBF7',
+  homeHeaderBackground: 'linear-gradient(90deg, #0F6E56 0%, #1D9E75 100%)',
+  homeHeaderBorderBottom: '',
+  homeWelcomeColor: '#ffffff',
+  homeWelcomeGradient: '',
+  homeWelcomeFont: "'Baloo 2', sans-serif",
+  homePanelBackground: '#EAF6EF',
+  homeSurfaceBackground: '#FFFFFF',
+  homeBorder: '#DCEAE1',
+  homeInk: '#1E3A32',
+  homeInkSoft: '#5C6E67',
+  homeAccentSolid: '#1D9E75',
+  homeAccentGradient: 'linear-gradient(90deg, #1D9E75 0%, #4CA6E0 100%)',
+  homeUseGradientForActive: false,
+  homeThemeButtonActiveBackground: '#ffffff',
+  homeThemeButtonActiveColor: '#0F6E56',
+  homeThemeButtonInactiveColor: '#ffffff',
+  homeThemeButtonInactiveBorder: 'rgba(255,255,255,.5)',
+  homeThemeButtonInactiveBackground: 'rgba(255,255,255,.12)',
+  homeLevelPalette: BASE_LEVEL_PALETTE,
 };
 
-export const lightTheme: ColorProfile = {
-  idKey: 'light flavor',
-  backgroundColor: '#ffffff',       // Colors.white
-  headerColor: '#03a9f4',           // Colors.lightBlue (Material primary)
-  buttonColor: '#607d8b',           // Colors.blueGrey
-  textColor: '#000000',             // Colors.black
-  contrastTextColor: '#000000',     // Colors.black
-  checkAnswerButtonColor: '#4caf50', // Colors.green
-  clearAnswerButtonColor: '#f44336', // Colors.red
+export const hapiiTheme: ColorProfile = {
+  idKey: 'hapii flavor',
+
+  // No "current site" precedent for Hapii — picked from its own home palette.
+  backgroundColor: '#F3F6FA',
+  headerColor: '#8B7FE8',
+  buttonColor: '#4CA6E0',
+  textColor: '#1E2A3A',
+  contrastTextColor: '#ffffff',
+  checkAnswerButtonColor: '#4caf50',
+  clearAnswerButtonColor: '#f44336',
   disabledButtonColor: '#9e9e9e',
+
+  homeLabel: 'Hapii',
+  homePageBackground: 'linear-gradient(135deg, #F5FBF7 0%, #F1F2FA 45%, #FCEEF4 100%)',
+  homeHeaderBackground: '#FFFFFF',
+  homeHeaderBorderBottom: '1px solid #E2E7EF',
+  homeWelcomeColor: '',
+  homeWelcomeGradient: 'linear-gradient(90deg, #4CA6E0 0%, #8B7FE8 55%, #E8598E 100%)',
+  homeWelcomeFont: "'Caveat', cursive",
+  homePanelBackground: '#FFFFFF',
+  homeSurfaceBackground: '#FFFFFF',
+  homeBorder: '#E2E7EF',
+  homeInk: '#1E2A3A',
+  homeInkSoft: '#5C6672',
+  homeAccentSolid: '#8B7FE8',
+  homeAccentGradient: 'linear-gradient(90deg, #4CA6E0 0%, #8B7FE8 55%, #E8598E 100%)',
+  homeUseGradientForActive: true,
+  homeThemeButtonActiveBackground: 'linear-gradient(90deg, #4CA6E0 0%, #8B7FE8 55%, #E8598E 100%)',
+  homeThemeButtonActiveColor: '#ffffff',
+  homeThemeButtonInactiveColor: '#5C6672',
+  homeThemeButtonInactiveBorder: '#E2E7EF',
+  homeThemeButtonInactiveBackground: 'transparent',
+  // Rotated one position from the base palette: the mockup only redefines lvl1/lvl2
+  // for Hapii (to blue/purple) and leaves lvl3-5 untouched, which would make lvl2
+  // and lvl3 collide on purple. Since every level is clickable here (no locking
+  // hides levels 3-5), a straight rotation keeps all 5 levels visually distinct.
+  homeLevelPalette: [
+    { accent: '#4CA6E0', bg: '#E6F1FB', ink: '#0C447C' },
+    { accent: '#8B7FE8', bg: '#EEEDFE', ink: '#3C3489' },
+    { accent: '#E0703C', bg: '#FAECE7', ink: '#712B13' },
+    { accent: '#E8598E', bg: '#FBEAF0', ink: '#72243E' },
+    { accent: '#1D9E75', bg: '#E1F5EE', ink: '#085041' },
+  ],
 };
 
-export const darkTheme: ColorProfile = {
-  idKey: 'dark flavor',
-  backgroundColor: '#000000',       // Color.fromARGB(255, 0, 0, 0)
-  headerColor: '#707070',           // Color.fromARGB(255, 112, 112, 112)
-  buttonColor: '#9e9e9e',           // Colors.grey
-  textColor: '#ffffff',             // Color.fromARGB(255, 255, 255, 255)
-  contrastTextColor: '#ffffff',     // Color.fromARGB(255, 255, 255, 255)
-  checkAnswerButtonColor: '#4caf50', // Colors.green
-  clearAnswerButtonColor: '#f44336', // Colors.red
-  disabledButtonColor: '#9e9e9e',
+export const darkGreenTheme: ColorProfile = {
+  idKey: 'dark green flavor',
+
+  backgroundColor: '#1A2420',
+  headerColor: '#0F3A2E',
+  buttonColor: '#1D9E75',
+  textColor: '#EAF3EE',
+  contrastTextColor: '#ffffff',
+  checkAnswerButtonColor: '#4caf50',
+  clearAnswerButtonColor: '#f44336',
+  disabledButtonColor: '#324A40',
+
+  homeLabel: 'Dark green',
+  homePageBackground: '#1A2420',
+  homeHeaderBackground: 'linear-gradient(90deg, #0F3A2E 0%, #0F6E56 100%)',
+  homeHeaderBorderBottom: '',
+  homeWelcomeColor: '#ffffff',
+  homeWelcomeGradient: '',
+  homeWelcomeFont: "'Baloo 2', sans-serif",
+  homePanelBackground: '#22322B',
+  homeSurfaceBackground: '#22322B',
+  homeBorder: '#324A40',
+  homeInk: '#EAF3EE',
+  homeInkSoft: '#9FB3AB',
+  homeAccentSolid: '#1D9E75',
+  homeAccentGradient: 'linear-gradient(90deg, #1D9E75 0%, #4CA6E0 100%)',
+  homeUseGradientForActive: false,
+  homeThemeButtonActiveBackground: '#ffffff',
+  homeThemeButtonActiveColor: '#0F3A2E',
+  homeThemeButtonInactiveColor: '#9FB3AB',
+  homeThemeButtonInactiveBorder: '#324A40',
+  homeThemeButtonInactiveBackground: 'transparent',
+  // Same hues as the base palette; only the ink shade is lightened for
+  // legibility against the dark card background (mockup explicitly does this
+  // for lvl1/lvl2 — extended here to lvl3-5 since none of them are locked/hidden).
+  homeLevelPalette: [
+    { accent: '#1D9E75', bg: '#E1F5EE', ink: '#5DCAA5' },
+    { accent: '#4CA6E0', bg: '#E6F1FB', ink: '#85B7EB' },
+    { accent: '#8B7FE8', bg: '#EEEDFE', ink: '#B7AEF5' },
+    { accent: '#E0703C', bg: '#FAECE7', ink: '#F0A47D' },
+    { accent: '#E8598E', bg: '#FBEAF0', ink: '#F291B3' },
+  ],
 };
 
-/** Ordered array of themes matching ThemeController._getProfileByIndex() indices (0–3). */
-export const themes: [ColorProfile, ColorProfile, ColorProfile, ColorProfile] = [
-  greenTheme,
-  blueTheme,
-  lightTheme,
-  darkTheme,
-];
+/** Ordered array of themes matching ThemeController._getProfileByIndex() indices (0-2). */
+export const themes: [ColorProfile, ColorProfile, ColorProfile] = [greenTheme, hapiiTheme, darkGreenTheme];

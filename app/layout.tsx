@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Baloo_2, Nunito, Caveat } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -9,6 +9,28 @@ const geistSans = Geist({
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+// Redesigned home screen fonts (see mathminigames_redesign_mockup_v2.html).
+// Loaded globally via CSS variables so app/home/page.tsx and components/home/*
+// can reference them in inline styles without affecting other pages, which
+// keep using Geist as their default body font.
+const baloo2 = Baloo_2({
+  variable: "--font-baloo-2",
+  weight: ["500", "600", "700", "800"],
+  subsets: ["latin"],
+});
+
+const nunito = Nunito({
+  variable: "--font-nunito",
+  weight: ["400", "600", "700", "800"],
+  subsets: ["latin"],
+});
+
+const caveat = Caveat({
+  variable: "--font-caveat",
+  weight: ["700"],
   subsets: ["latin"],
 });
 
@@ -25,7 +47,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${baloo2.variable} ${nunito.variable} ${caveat.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
