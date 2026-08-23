@@ -16,7 +16,8 @@ import { useGameDataStore } from '@/lib/stores/gameDataStore';
 import { useAssistStore } from '@/lib/stores/assistStore';
 import { useSessionStore } from '@/lib/stores/sessionStore';
 import { useUserStore } from '@/lib/stores/userStore';
-import { submitQuizAttempt } from '@/lib/services/quizAttemptService';
+import { startQuizAttempt, updateQuizAttemptProgress } from '@/lib/services/quizAttemptService';
+import type { Difficulty } from '@/lib/types';
 import JumbleGame from '@/components/games/JumbleGame';
 
 export default function TestTranslatePage() {
@@ -36,7 +37,9 @@ export default function TestTranslatePage() {
   async function handleSubmitToFirestore() {
     setWriteStatus('saving');
     try {
-      const docId = await submitQuizAttempt(userId, completeSeries());
+      const attempt = completeSeries();
+      const docId = await startQuizAttempt(userId, attempt.startTime, attempt.difficulty as Difficulty);
+      await updateQuizAttemptProgress(userId, docId, attempt.questions);
       setWriteStatus(`saved:${docId}`);
     } catch (e) {
       setWriteStatus(`error:${e instanceof Error ? e.message : String(e)}`);

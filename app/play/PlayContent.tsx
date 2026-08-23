@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useThemeStore, selectActiveProfile } from '@/lib/stores/themeStore';
 import { useHydrated } from '@/lib/hooks/useHydrated';
@@ -8,11 +8,11 @@ import { useGameDataStore } from '@/lib/stores/gameDataStore';
 import { useSessionStore } from '@/lib/stores/sessionStore';
 import { useAssistStore } from '@/lib/stores/assistStore';
 import { useUserStore } from '@/lib/stores/userStore';
-import { selectSeriesQuestions } from '@/lib/session';
-import { submitQuizAttempt } from '@/lib/services/quizAttemptService';
-import { SKILL_MAP } from '@/lib/skillMap';
+import { selectSublevelQuestions } from '@/lib/session';
+import { startQuizAttempt, updateQuizAttemptProgress } from '@/lib/services/quizAttemptService';
+import { SUBLEVEL_MAP } from '@/lib/levelMap';
 import { themes, type ColorProfile } from '@/lib/themes';
-import type { AnyGameData, Difficulty, QuizAttempt } from '@/lib/types';
+import type { AnyGameData, Difficulty } from '@/lib/types';
 import JumbleGame from '@/components/games/JumbleGame';
 import TypingGame from '@/components/games/TypingGame';
 import FillBlanksGame from '@/components/games/FillBlanksGame';
@@ -21,23 +21,19 @@ import ReadAloudGame from '@/components/games/ReadAloudGame';
 import Calculator from '@/components/Calculator';
 import ProgressBar from '@/components/ProgressBar';
 
-const VALID_DIFFICULTIES: Difficulty[] = ['easy', 'intermediate', 'hard', 'random'];
-
 /** How long the "✓ Correct!" / feedback state stays on screen before the series advances. */
 const FEEDBACK_DELAY_MS = 500;
 
 type WriteStatus = 'idle' | 'saving' | 'saved' | 'error';
 
-function isDifficulty(v: string | null): v is Difficulty {
-  return v !== null && (VALID_DIFFICULTIES as string[]).includes(v);
-}
-
 export default function PlayContent() {
   const searchParams = useSearchParams();
-  const difficultyParam = searchParams.get('difficulty');
-  const difficulty: Difficulty = isDifficulty(difficultyParam) ? difficultyParam : 'random';
-  const category = searchParams.get('category') ?? '';
-  const categoryLabel = category ? (SKILL_MAP[category] ?? category) : 'All Skills';
+  const level = Number(searchParams.get('level') ?? '0') || 0;
+  const sublevel = searchParams.get('sublevel') ?? '';
+  const sublevelName = sublevel ? (SUBLEVEL_MAP[sublevel] ?? '') : '';
+  const sublevelLabel = sublevel
+    ? `Level ${level}, sublevel ${sublevel}${sublevelName ? ` · ${sublevelName}` : ''}`
+    : 'All Skills';
 
   const router = useRouter();
   const profile = useThemeStore(selectActiveProfile);
@@ -52,14 +48,24 @@ export default function PlayContent() {
   const isLoading = useGameDataStore((s) => s.isLoading);
   const loadError = useGameDataStore((s) => s.error);
   const initBanks = useGameDataStore((s) => s.initBanks);
-  const easyBank = useGameDataStore((s) => s.easyBank);
-  const intermediateBank = useGameDataStore((s) => s.intermediateBank);
-  const hardBank = useGameDataStore((s) => s.hardBank);
-  const sequences = useGameDataStore((s) => s.sequences);
+  const jumbleBank = useGameDataStore((s) => s.jumbleBank);
+  const playbackBank = useGameDataStore((s) => s.playbackBank);
+  const readAloudBank = useGameDataStore((s) => s.readAloudBank);
+  const typingBank = useGameDataStore((s) => s.typingBank);
+  const fillBlanksBank = useGameDataStore((s) => s.fillBlanksBank);
 
   useEffect(() => {
     initBanks();
   }, [initBanks]);
+
+  // Combines the 5 per-type banks (rather than the per-difficulty banks, which
+  // exclude 'random'-difficulty questions) into the full parsed question set —
+  // a sublevel's questions can carry any difficulty tag, so selection must see
+  // all of them. Mirrors app/home/page.tsx's identical bank assembly.
+  const bank: AnyGameData[] = useMemo(
+    () => [...jumbleBank, ...playbackBank, ...readAloudBank, ...typingBank, ...fillBlanksBank],
+    [jumbleBank, playbackBank, readAloudBank, typingBank, fillBlanksBank],
+  );
 
   // ── Session wiring ──────────────────────────────────────────────────────────
   const questions = useSessionStore((s) => s.questions);
@@ -75,27 +81,38 @@ export default function PlayContent() {
   const completeSeries = useSessionStore((s) => s.completeSeries);
   const resetSession = useSessionStore((s) => s.resetSession);
 
-  // Build the series exactly once per (category, difficulty) navigation, once banks are loaded.
+  // Build the series exactly once per sublevel navigation, once banks are loaded.
   const startedKeyRef = useRef<string | null>(null);
   const completedRef = useRef(false);
   const preSeriesHighScoreRef = useRef(highScore);
+  const [attemptId, setAttemptId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isLoaded) return;
-    const key = `${category}|${difficulty}`;
-    if (startedKeyRef.current === key) return;
-    startedKeyRef.current = key;
+    if (!isLoaded || !sublevel) return;
+    if (startedKeyRef.current === sublevel) return;
+    startedKeyRef.current = sublevel;
     completedRef.current = false;
     preSeriesHighScoreRef.current = highScore;
 
-    const selected = selectSeriesQuestions(
-      { easyBank, intermediateBank, hardBank },
-      sequences,
-      category,
-      difficulty,
-    );
-    startSession(selected, difficulty);
-  }, [isLoaded, category, difficulty, easyBank, intermediateBank, hardBank, sequences, startSession, highScore]);
+    const selected = selectSublevelQuestions(bank, sublevel);
+    // A sublevel's questions all carry the same difficulty tag in practice
+    // (assigned per-level at authoring time); recorded on QuizAttempt for
+    // analytics continuity even though there's no difficulty selector anymore.
+    const seriesDifficulty: Difficulty = selected[0]?.difficulty ?? 'random';
+    startSession(selected, seriesDifficulty);
+
+    // Creates the Firestore attempt doc immediately, not just at series end —
+    // see quizAttemptService.startQuizAttempt for why. Fresh mount per
+    // sublevel (this page has no in-place link to another sublevel) means
+    // there's no stale attemptId from a previous session to clear here.
+    if (userId && selected.length > 0) {
+      startQuizAttempt(userId, new Date(), seriesDifficulty)
+        .then((id) => setAttemptId(id))
+        .catch((err: unknown) => {
+          console.error('[PlayContent] Failed to start attempt doc:', err instanceof Error ? err.message : String(err));
+        });
+    }
+  }, [isLoaded, sublevel, bank, startSession, highScore, userId]);
 
   const currentQuestion: AnyGameData | undefined = questions[currentIndex];
   const seriesComplete = isLoaded && questions.length > 0 && currentIndex >= questions.length;
@@ -108,31 +125,31 @@ export default function PlayContent() {
   }, [currentQuestion?.id]);
 
   const [isNewHighScore, setIsNewHighScore] = useState(false);
-  const [attempt, setAttempt] = useState<QuizAttempt | null>(null);
 
-  // Computes the QuizAttempt exactly once per series, via completeSeries()
-  // (which also updates highScore). Kept in state (not just a local const)
-  // so it survives into the write-effect below and can be retried without
-  // recomputing — completeSeries() isn't idempotent (it stamps submissionTime).
+  // Marks the series complete and updates highScore, independent of the
+  // Firestore write below (which already happens per-question, not just here).
   useEffect(() => {
     if (!seriesComplete || completedRef.current) return;
     completedRef.current = true;
     setIsNewHighScore(score > 0 && score > preSeriesHighScoreRef.current);
-    setAttempt(completeSeries());
+    completeSeries();
   }, [seriesComplete, completeSeries, score]);
 
-  // ── Firestore write: quizAttempts/{userId}/attempts/{autoId} (append model) ──
-  // writeResult is only ever set from inside the async .then()/.catch()
-  // callbacks below, never synchronously in the effect body — 'saving' is
-  // derived (attempt set, no result yet) rather than an explicit setState.
+  // ── Firestore write: quizAttempts/{userId}/attempts/{attemptId} ─────────────
+  // Fires after every answered question (questionLogs grows by one each
+  // time) — not only at series completion, see quizAttemptService's
+  // startQuizAttempt doc comment for why. writeStatus below is only ever
+  // rendered on the results screen, but the underlying writes happen
+  // throughout play, so a session abandoned mid-sublevel still leaves
+  // whatever was answered so far in Firestore.
   const [writeResult, setWriteResult] = useState<{ ok: true } | { ok: false; message: string } | null>(null);
   const [retryToken, setRetryToken] = useState(0);
 
   useEffect(() => {
-    if (!attempt) return;
+    if (!attemptId || questionLogs.length === 0) return;
     let cancelled = false;
 
-    submitQuizAttempt(userId, attempt)
+    updateQuizAttemptProgress(userId, attemptId, questionLogs)
       .then(() => {
         if (!cancelled) setWriteResult({ ok: true });
       })
@@ -144,11 +161,11 @@ export default function PlayContent() {
     return () => {
       cancelled = true;
     };
-    // retryToken is intentionally in the deps so bumping it re-runs the write
-    // against the same `attempt` without recomputing the series result.
-  }, [attempt, userId, retryToken]);
+    // retryToken lets handleRetryWrite() re-run the write for the current
+    // questionLogs snapshot after a transient failure.
+  }, [attemptId, questionLogs, userId, retryToken]);
 
-  const writeStatus: WriteStatus = !attempt ? 'idle' : writeResult === null ? 'saving' : writeResult.ok ? 'saved' : 'error';
+  const writeStatus: WriteStatus = !attemptId ? 'idle' : writeResult === null ? 'saving' : writeResult.ok ? 'saved' : 'error';
   const writeError = writeResult && !writeResult.ok ? writeResult.message : null;
 
   function handleRetryWrite() {
@@ -262,7 +279,7 @@ export default function PlayContent() {
       <Centered p={p}>
         <h1 style={{ fontSize: '1.4rem', fontWeight: 700 }}>No questions available</h1>
         <p style={{ fontSize: '1rem' }}>
-          There are no {difficulty} questions for &ldquo;{categoryLabel}&rdquo; yet.
+          There are no questions for &ldquo;{sublevelLabel}&rdquo; yet.
         </p>
         <button onClick={() => router.push('/home')} style={actionButton}>
           ← Back to Home
@@ -367,7 +384,7 @@ export default function PlayContent() {
   return (
     <main style={{ minHeight: '100vh', backgroundColor: p.backgroundColor, color: p.textColor }}>
       <header style={{ ...card, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-        <span style={{ fontWeight: 700 }}>{categoryLabel}</span>
+        <span style={{ fontWeight: 700 }}>{sublevelLabel}</span>
         <span>Question {currentIndex + 1} / {questions.length}</span>
         <span>Score: {score}</span>
         <Calculator profile={p} />

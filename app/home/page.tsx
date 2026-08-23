@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/lib/stores/userStore';
 import { useAssistStore } from '@/lib/stores/assistStore';
 import { useThemeStore, selectActiveProfile } from '@/lib/stores/themeStore';
@@ -98,14 +99,21 @@ export default function HomePage() {
     [sublevelProgress],
   );
 
-  // Sublevel clicks and Play are intentionally inert this pass — wiring them
-  // to actually start a game is deferred to the next prompt.
-  function handleSublevelClick(clickedLevel: number, clickedSublevel: string) {
-    void clickedLevel;
-    void clickedSublevel;
+  const router = useRouter();
+
+  function goToPlay(targetLevel: number, targetSublevel: string) {
+    router.push(`/play?level=${targetLevel}&sublevel=${encodeURIComponent(targetSublevel)}`);
   }
 
-  function handlePlay() {}
+  function handleSublevelClick(clickedLevel: number, clickedSublevel: string) {
+    goToPlay(clickedLevel, clickedSublevel);
+  }
+
+  function handlePlay() {
+    if (continueTarget && continueTarget.level !== null && continueTarget.sublevel !== null) {
+      goToPlay(continueTarget.level, continueTarget.sublevel);
+    }
+  }
 
   // ── Render ──────────────────────────────────────────────────────────────────
 

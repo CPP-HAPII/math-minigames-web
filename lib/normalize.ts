@@ -175,21 +175,30 @@ export function resolveQuestionTypeKey(doc: Record<string, unknown>): string {
 
 /**
  * Normalise a string for answer comparison in the Jumble game.
- * Ported from GameFormState._normalizeComparisonString() in lib/pages/activities/jumble.dart.
+ * Ported from GameFormState._normalizeComparisonString() in lib/pages/activities/jumble.dart,
+ * since extended (see below) for a real cross-game bug found in Phase 6 testing.
  *
  * Steps (in order):
  *   1. Lowercase the entire string.
- *   2. Strip all punctuation except hyphens (keep 'forty-eight', 'years-old' intact).
- *   3. Remove the standalone word 'and' (common in written numbers: "four hundred and twenty").
- *   4. Collapse all runs of whitespace to a single space and trim.
+ *   2. Treat hyphens as word separators (a compound number-word like
+ *      "seventy-seven" and its space-separated form "seventy seven" must
+ *      compare equal) — a real spoken transcript is always space-separated,
+ *      never hyphenated, so ReadAloudGame's accepted answers stored as one
+ *      hyphenated token (e.g. "seventy-seven") could never match any real
+ *      spoken answer before this fix.
+ *   3. Strip remaining punctuation.
+ *   4. Remove the standalone word 'and' (common in written numbers: "four hundred and twenty").
+ *   5. Collapse all runs of whitespace to a single space and trim.
  *
  * Used so that "four hundred and fifty three" == "four hundred fifty three",
- * and "years-old" == "years-old" but "years.old" != "years-old".
+ * and "years-old" == "years old" == "years.old" (hyphens, like other
+ * punctuation, are now word separators rather than preserved literally).
  */
 export function normalizeComparisonString(s: string): string {
   return s
     .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, ' ') // strip punctuation, preserve hyphens
+    .replace(/-/g, ' ') // hyphens are word separators, not literal characters to preserve
+    .replace(/[^a-z0-9\s]/g, ' ') // strip remaining punctuation
     .replace(/\band\b/g, ' ') // remove standalone 'and'
     .replace(/\s+/g, ' ') // collapse whitespace
     .trim();

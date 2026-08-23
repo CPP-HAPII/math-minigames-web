@@ -1,102 +1,15 @@
-import type { AnyGameData, Difficulty, GameType, SequenceData } from './types';
+import type { AnyGameData, GameType } from './types';
 
-/**
- * Game types with a working component. All five are now wired in: Playback
- * (Stage 11) and ReadAloud (Stage 14) were each added exactly as predicted
- * by the Stage 9 note this comment used to carry — just an array entry here
- * plus a render branch in PlayContent; selectSeriesQuestions() itself never
- * needed to change for either.
- */
+/** Game types with a working component. */
 export const SUPPORTED_GAME_TYPES: readonly GameType[] = ['jumble', 'typing', 'fill', 'playback', 'reading'];
 
-/** Number of questions in a 'random' difficulty series. Mirrors SeriesHomePage(maxQuestCount: 10) in game_series.dart. */
-const RANDOM_SERIES_LENGTH = 10;
-
 /**
- * Maps internal Difficulty keys to the label strings sequenceDoc.json stores
- * ("Easy" / "Medium" / "Hard" — PascalCase UI labels, not lowercased at read
- * time; see parseSequence() in gameDataStore.ts). This is the same UI-label
- * <-> data-key mapping app/home/page.tsx's DIFFICULTIES array already applies
- * once for display ("Medium" -> 'intermediate'); here it's applied again so a
- * chosen difficulty can be matched against SequenceData.difficulty entries.
+ * Build the ordered question pool for a sublevel-based play session — every
+ * question tagged with this sublevel (level/sublevel fields from the
+ * levels/sublevels migration), in bank order. A sublevel's question count is
+ * small and fixed (~8 today), so unlike the difficulty-based random mode this
+ * replaced, there's no shuffle or length cap here.
  */
-const DIFFICULTY_SEQUENCE_LABEL: Record<'easy' | 'intermediate' | 'hard', string> = {
-  easy: 'Easy',
-  intermediate: 'Medium',
-  hard: 'Hard',
-};
-
-const DIFFICULTY_BANK_KEY = {
-  easy: 'easyBank',
-  intermediate: 'intermediateBank',
-  hard: 'hardBank',
-} as const;
-
-interface DifficultyBanks {
-  easyBank: AnyGameData[];
-  intermediateBank: AnyGameData[];
-  hardBank: AnyGameData[];
-}
-
-function shuffle<T>(arr: T[]): T[] {
-  const out = [...arr];
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [out[i], out[j]] = [out[j], out[i]];
-  }
-  return out;
-}
-
-/**
- * Build the ordered question pool for a play session.
- *
- * difficulty === 'random': pools all three difficulty banks together, shuffles,
- *   and caps at RANDOM_SERIES_LENGTH — mirrors Dart's DifficultyType.random path
- *   (selectRandPages()), which ignores sequence/difficulty filtering entirely.
- *
- * difficulty !== 'random': maps the difficulty to its sequenceDoc label (see
- *   DIFFICULTY_SEQUENCE_LABEL) and confirms a sequence declares that label
- *   (warns if not — gameDataStore's easyBank/intermediateBank/hardBank are the
- *   same partition sequenceDoc's "Easy/Medium/Hard Sequence" entries describe,
- *   so the bank is used either way). No shuffle — matches the Dart fixed-series
- *   path, which walks the bank in its existing order.
- *
- * `category`, when non-empty, restricts to questions whose `skills` array
- * contains it — this is the SKILL_MAP-keyed grid on the home page. Sequence
- * `filters` (topic tags like "addition", a coarser taxonomy than `skills`)
- * aren't reachable from that grid, so they're not applied as a hard filter
- * here; they remain on `sequences` for a future topic-sequence picker.
- *
- * Playback/ReadAloud questions are always excluded — see SUPPORTED_GAME_TYPES.
- */
-export function selectSeriesQuestions(
-  banks: DifficultyBanks,
-  sequences: SequenceData[],
-  category: string,
-  difficulty: Difficulty,
-): AnyGameData[] {
-  let pool: AnyGameData[];
-
-  if (difficulty === 'random') {
-    pool = [...banks.easyBank, ...banks.intermediateBank, ...banks.hardBank];
-  } else {
-    const label = DIFFICULTY_SEQUENCE_LABEL[difficulty];
-    const hasSequence = sequences.some((s) => s.difficulty.includes(label));
-    if (!hasSequence) {
-      console.warn(`[session] No sequence in sequenceDoc declares difficulty label "${label}".`);
-    }
-    pool = banks[DIFFICULTY_BANK_KEY[difficulty]];
-  }
-
-  pool = pool.filter((q) => SUPPORTED_GAME_TYPES.includes(q.gameType));
-
-  if (category) {
-    pool = pool.filter((q) => q.skills.includes(category));
-  }
-
-  if (difficulty === 'random') {
-    pool = shuffle(pool).slice(0, RANDOM_SERIES_LENGTH);
-  }
-
-  return pool;
+export function selectSublevelQuestions(bank: AnyGameData[], sublevel: string): AnyGameData[] {
+  return bank.filter((q) => q.sublevel === sublevel && SUPPORTED_GAME_TYPES.includes(q.gameType));
 }
