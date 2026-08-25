@@ -15,7 +15,13 @@ Many multilingual learners (MLs) struggle with math not because of the math itse
 - **Typing** — written math reasoning (numbers to words, expressions to words)
 - **Fill in the Blank** — structured response accuracy
 
-Each game type covers a mix of math skills (addition, subtraction, multiplication, division, fractions, decimals) and language skills (listening, spoken response, word problems, numbers-to-words, words-to-numbers, sentence building).
+Each game type covers a mix of math skills (addition, subtraction, multiplication, division, fractions, decimals) and language skills (listening, spoken response, word problems, numbers-to-words, words-to-numbers, sentence building). Questions are organized into 5 levels, each split into a handful of sublevels (e.g. "Level 3, sublevel 3.2 · Understanding Large Numbers"), with a Continue banner on the home screen that resumes a student's next incomplete sublevel.
+
+### No login/auth, by design
+Students enter a 3-digit Student ID on the welcome screen — no password, no account, no role system. This is intentional: for a K-5 classroom tool with no sensitive or personally identifying data, a professor confirmed real authentication isn't needed, so it was dropped from scope rather than left half-built.
+
+### Student UI theming
+Three selectable color themes (Green, Hapii, Dark green), picked from a switcher on both the welcome screen and the home screen and persisted per browser. Each theme drives its own palette across the home screen (headers, level cards, progress accents) and the play screen (question/answer cards, choice buttons, calculator, translate/speak controls), all sourced from one `ColorProfile` per theme rather than scattered hardcoded colors.
 
 ### Language assist levels
 Three tiers of scaffolding, selectable per user:
@@ -26,13 +32,13 @@ Three tiers of scaffolding, selectable per user:
 ### Logging
 Every question attempt is logged per user with correctness, time taken, and which assist interaction (if any) was used — recorded via a priority scheme (`advanced < intermediate < novice`) that captures the *highest-tier interaction actually used* per question, not just the user's assigned level. This means a student assigned "intermediate" who also happens to trigger a novice-tier interaction (e.g., "Play translation") gets that logged accurately.
 
-### Teacher-facing analytics portal (in progress)
-An educator dashboard (`/teacher-portal`) currently in development, covering:
-- **Class Overview** — class-wide skill accuracy, weak-topic detection, average time per skill
-- **Student Detail** — per-student breakdown of the same, via a student picker
-- **Assist Usage** — class-wide interaction-type ranking and per-student assist-tier breakdown
+### Teacher-facing analytics portal
+An educator dashboard (`/teacher-portal`), built and live, reachable without restriction (see "No login/auth" above), covering:
+- **Class Overview** — class-wide skill accuracy, weak-topic detection, average time per skill, with chart visualizations
+- **Student Detail** — per-student breakdown of the same, via a student picker, with chart visualizations
+- **Assist Usage** — class-wide interaction-type ranking and per-student assist-tier breakdown, with chart visualizations
 
-Not yet built: auth/role gating (the portal is currently reachable without restriction), teacher controls for selecting question sequences/difficulty, and chart-based visualizations (current views are table/list-based).
+Not yet built: teacher controls for selecting question sequences/difficulty.
 
 ## System architecture
 
@@ -40,11 +46,11 @@ Not yet built: auth/role gating (the portal is currently reachable without restr
 Flutter Application (MathMinigames)  →  Next.js port (this repo)
 
 UI / Presentation        Business Logic              Data Services
-- Home / Dashboard       - Game logic & validation    - FirebaseService
-- Login / Register       - Language assistance        - AuthService
-- Game screens           - Translation (EN <-> ES)     - QuestionService
-- Score / Progress       - Text-to-speech (TTS)         - SequenceService
-                          - Sequence & filter engine     - QuizAttemptService
+- Welcome (Student ID)   - Game logic & validation    - FirebaseService
+- Home / level select    - Language assistance        - QuestionService
+- Game screens           - Translation (EN <-> ES)     - SequenceService
+- Score / Progress       - Text-to-speech (TTS)         - QuizAttemptService
+- Teacher portal          - Sequence & filter engine
 
                                     ↓ (HTTPS)
 
@@ -57,9 +63,10 @@ Firestore Database
 Firestore's `quizAttempts` collection stores each attempt's `questions[]` as an array of maps (not flat documents), which means Firestore can't natively query into fields like `assistUsed` across many documents — analytics aggregation reads whole documents and reduces over `questions[]` in code rather than using a native Firestore query.
 
 ## Tech stack
-- **Frontend:** Next.js, TypeScript, React
-- **Backend:** Firebase (Firestore, Auth)
-- **Testing:** Vitest (unit tests for the analytics service layer)
+- **Frontend:** Next.js, TypeScript, React, Zustand (client state/persisted theme), Tailwind CSS
+- **Charts:** Recharts (teacher portal visualizations)
+- **Backend:** Firebase (Firestore)
+- **Testing:** Vitest (unit tests for the analytics service layer), Playwright (smoke scripts under `scripts/`)
 - **Deployment:** Vercel — live demo at `math-minigames-web.vercel.app`
 
 ## Development
@@ -78,12 +85,13 @@ Originally built across 15 stages (data layer, game types, sequencing, translati
 - ✅ Assist-level features (novice/intermediate/advanced) — implemented and verified across all five game types
 - ✅ Logging completeness — audited end-to-end, no gaps found
 - ✅ Analytics/aggregation layer — data access, stats computation (accuracy, weak-topics, assist usage, timing), and a documented decision to defer caching until there's a real performance need
-- ✅ Teacher portal UI (data-wired) — Class Overview, Student Detail, and Assist Usage sections all wired to real Firestore data
+- ✅ Teacher portal UI (data-wired) — Class Overview, Student Detail, and Assist Usage sections all wired to real Firestore data, with chart visualizations
 - ✅ Unit tests for the analytics service layer — 100% coverage, cross-checked against real audit data
-- 🔲 Chart/visualization polish for the portal UI
-- 🔲 Auth/role distinction (student vs. teacher accounts)
+- ✅ Levels/sublevels migration — questions organized into 5 levels with sublevels, plus a Continue banner that resumes progress
+- ✅ Redesigned student-facing UI — new home screen (level grid, Continue banner), a 3-theme color system with a switcher on both the welcome and home screens, and matching play-screen theming (question cards, choice buttons, calculator, translate/speak controls)
 - 🔲 Teacher controls for selecting sequences/difficulty
-- 🔲 Optional layout/design redesign
+
+Auth/role gating is intentionally out of scope — see "No login/auth, by design" above.
 
 ## Acknowledgments
 
