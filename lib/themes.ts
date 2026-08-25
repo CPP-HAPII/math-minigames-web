@@ -26,6 +26,17 @@ export interface ColorProfile {
   checkAnswerButtonColor: string;
   clearAnswerButtonColor: string;
   disabledButtonColor: string;
+  /** Background for the smaller colorful surface on the play page — currently the
+   * choice/option buttons in JumbleGame, TypingGame, FillBlanksGame, PlaybackGame,
+   * ReadAloudGame (the bigger instruction/question/answer cards use homeAccentGradient
+   * instead, since the two were deliberately swapped: the bigger card area shows the
+   * prettier gradient, the smaller buttons get the flatter color). Split out from
+   * headerColor so a theme can style these independently of headerColor's other
+   * consumers (Calculator modal, TranslateButton pill, hover-translate tooltip). */
+  cardBackground: string;
+  /** Text color paired with cardBackground
+   * the same way contrastTextColor pairs with headerColor everywhere else. */
+  cardTextColor: string;
 
   // ── Home-screen fields (app/home/page.tsx, components/home/*) ──
   /** Label shown on this theme's button in the switcher, e.g. 'Dark green'. */
@@ -77,15 +88,23 @@ const BASE_LEVEL_PALETTE: [HomeLevelAccent, HomeLevelAccent, HomeLevelAccent, Ho
 export const greenTheme: ColorProfile = {
   idKey: 'green flavor',
 
-  // Unchanged from the current site — "Green" keeps gameplay looking exactly as it does today.
-  backgroundColor: '#799c54',
-  headerColor: '#668446',
-  buttonColor: '#60c6d8',
+  // Softened from the original olive-moss look — reuses the same mint/green
+  // tones already established by this theme's home-screen palette below,
+  // rather than introducing new colors.
+  backgroundColor: '#EAF6EF',
+  headerColor: '#1D9E75',
+  // Muted from #60c6d8 — this drives the Speak/mic buttons, which read too
+  // bright/saturated at the original shade. Desaturated rather than
+  // lightened further, so the white button text stays readable.
+  buttonColor: '#6FB9C7',
   textColor: '#000000',
   contrastTextColor: '#ffffff',
   checkAnswerButtonColor: '#6fd800',
-  clearAnswerButtonColor: '#e04444',
+  // Softer than the original saturated red — same "clear/wrong" meaning, less harsh.
+  clearAnswerButtonColor: '#E57373',
   disabledButtonColor: '#9e9e9e',
+  cardBackground: '#1D9E75',
+  cardTextColor: '#ffffff',
 
   homeLabel: 'Green',
   homePageBackground: '#F5FBF7',
@@ -113,15 +132,26 @@ export const greenTheme: ColorProfile = {
 export const hapiiTheme: ColorProfile = {
   idKey: 'hapii flavor',
 
-  // No "current site" precedent for Hapii — picked from its own home palette.
+  // No "current site" precedent for Hapii. headerColor/buttonColor were
+  // originally the same blue/purple pair as the home-screen accent, which
+  // reads as harsh on a full-page play background; swapped for a teal/pink
+  // pair pulled from elsewhere in this theme's own gradient endpoints instead.
   backgroundColor: '#F3F6FA',
-  headerColor: '#8B7FE8',
-  buttonColor: '#4CA6E0',
+  headerColor: '#2FB8A6',
+  // Muted from #E8598E — this drives the Speak/mic buttons, which read too
+  // bright/saturated at the original shade. Desaturated rather than
+  // lightened further, so the white button text stays readable.
+  buttonColor: '#D97CA0',
   textColor: '#1E2A3A',
   contrastTextColor: '#ffffff',
   checkAnswerButtonColor: '#4caf50',
-  clearAnswerButtonColor: '#f44336',
+  clearAnswerButtonColor: '#E57373',
   disabledButtonColor: '#9e9e9e',
+  // Cards go white/home-style instead of a solid color block — matches the
+  // home screen's white surfaces, with color kept on the interactive pieces
+  // (option buttons, Translate/Speak pills) rather than the whole card.
+  cardBackground: '#FFFFFF',
+  cardTextColor: '#1E2A3A',
 
   homeLabel: 'Hapii',
   homePageBackground: 'linear-gradient(135deg, #F5FBF7 0%, #F1F2FA 45%, #FCEEF4 100%)',
@@ -161,12 +191,17 @@ export const darkGreenTheme: ColorProfile = {
 
   backgroundColor: '#1A2420',
   headerColor: '#0F3A2E',
-  buttonColor: '#1D9E75',
+  // Muted from #1D9E75 — this drives the Speak/mic buttons, which read too
+  // bright/saturated at the original shade. Desaturated rather than
+  // lightened further, so the white button text stays readable.
+  buttonColor: '#35A484',
   textColor: '#EAF3EE',
   contrastTextColor: '#ffffff',
   checkAnswerButtonColor: '#4caf50',
-  clearAnswerButtonColor: '#f44336',
+  clearAnswerButtonColor: '#E57373',
   disabledButtonColor: '#324A40',
+  cardBackground: '#0F3A2E',
+  cardTextColor: '#ffffff',
 
   homeLabel: 'Dark green',
   homePageBackground: '#1A2420',

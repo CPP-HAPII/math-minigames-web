@@ -243,20 +243,27 @@ export default function PlayContent() {
   }
 
   // ── Styles ───────────────────────────────────────────────────────────────────
-  const card: React.CSSProperties = {
-    backgroundColor: p.headerColor,
-    borderRadius: '1rem',
+  // "panelCard" mirrors the white/dark surface-card look used throughout the
+  // redesigned home screen (LevelGrid, ContinueBanner) — used here for the
+  // page chrome (results screen, progress wrapper), not the individual game
+  // cards, which keep their own already-theme-correct styling.
+  const panelCard: React.CSSProperties = {
+    backgroundColor: p.homeSurfaceBackground,
+    border: `1px solid ${p.homeBorder}`,
+    borderRadius: '20px',
     padding: '1.25rem 1.5rem',
     margin: '0.75rem auto',
     maxWidth: '760px',
     width: '100%',
+    color: p.homeInk,
   };
 
   const actionButton: React.CSSProperties = {
+    fontFamily: 'var(--font-baloo-2), sans-serif',
     backgroundColor: p.buttonColor,
     color: p.contrastTextColor,
     border: 'none',
-    borderRadius: '0.6rem',
+    borderRadius: '999px',
     padding: '0.65rem 1.4rem',
     fontSize: '1rem',
     fontWeight: 700,
@@ -291,9 +298,17 @@ export default function PlayContent() {
   // ── Results screen ──────────────────────────────────────────────────────────
   if (seriesComplete) {
     return (
-      <main style={{ minHeight: '100vh', backgroundColor: p.backgroundColor, color: p.textColor, padding: '2rem 1rem' }}>
-        <div style={{ ...card, textAlign: 'center' }}>
-          <h1 style={{ fontSize: '1.6rem', fontWeight: 700, margin: '0 0 1rem', color: p.contrastTextColor }}>
+      <main
+        style={{
+          minHeight: '100vh',
+          background: p.homePageBackground,
+          color: p.homeInk,
+          fontFamily: 'var(--font-nunito), sans-serif',
+          padding: '2rem 1rem',
+        }}
+      >
+        <div style={{ ...panelCard, textAlign: 'center' }}>
+          <h1 style={{ fontFamily: 'var(--font-baloo-2), sans-serif', fontSize: '1.6rem', fontWeight: 700, margin: '0 0 1rem', color: p.homeInk }}>
             Series Complete!
           </h1>
           <p style={{ fontSize: '1.2rem', margin: '0.35rem 0' }}>Score: <strong>{score}</strong></p>
@@ -335,8 +350,8 @@ export default function PlayContent() {
         </div>
 
         {questionLogs.length > 0 && (
-          <div style={{ ...card, textAlign: 'left' }}>
-            <p style={{ fontWeight: 700, marginBottom: '0.75rem', color: p.contrastTextColor }}>
+          <div style={{ ...panelCard, textAlign: 'left' }}>
+            <p style={{ fontFamily: 'var(--font-baloo-2), sans-serif', fontWeight: 700, marginBottom: '0.75rem', color: p.homeInk }}>
               Question Breakdown
             </p>
             <ol style={{ margin: 0, paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -381,16 +396,55 @@ export default function PlayContent() {
   }
 
   // ── Playing ──────────────────────────────────────────────────────────────────
+  // Pill badge for the header bar — same translucent-pill treatment the home
+  // screen uses for its theme-switcher buttons, so it stays readable against
+  // any of the three homeHeaderBackground gradients.
+  const headerPill: React.CSSProperties = {
+    fontFamily: 'var(--font-nunito), sans-serif',
+    fontWeight: 700,
+    fontSize: '13px',
+    padding: '8px 14px',
+    borderRadius: '999px',
+    border: `1.5px solid ${p.homeThemeButtonInactiveBorder}`,
+    background: p.homeThemeButtonInactiveBackground,
+    color: p.homeThemeButtonInactiveColor,
+  };
+
   return (
-    <main style={{ minHeight: '100vh', backgroundColor: p.backgroundColor, color: p.textColor }}>
-      <header style={{ ...card, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-        <span style={{ fontWeight: 700 }}>{sublevelLabel}</span>
-        <span>Question {currentIndex + 1} / {questions.length}</span>
-        <span>Score: {score}</span>
-        <Calculator profile={p} />
+    <main style={{ minHeight: '100vh', background: p.homePageBackground, color: p.textColor }}>
+      <header
+        style={{
+          background: p.homeHeaderBackground,
+          borderBottom: p.homeHeaderBorderBottom || undefined,
+          padding: '18px 34px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '0.6rem',
+        }}
+      >
+        <span
+          style={{
+            fontFamily: p.homeWelcomeFont,
+            fontWeight: p.homeWelcomeGradient ? 700 : 800,
+            fontSize: p.homeWelcomeGradient ? '22px' : '19px',
+            color: p.homeWelcomeGradient ? 'transparent' : p.homeWelcomeColor,
+            background: p.homeWelcomeGradient || undefined,
+            backgroundClip: p.homeWelcomeGradient ? 'text' : undefined,
+            WebkitBackgroundClip: p.homeWelcomeGradient ? 'text' : undefined,
+          }}
+        >
+          {sublevelLabel}
+        </span>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={headerPill}>Question {currentIndex + 1} / {questions.length}</span>
+          <span style={headerPill}>Score: {score}</span>
+          <Calculator profile={p} />
+        </div>
       </header>
 
-      <div style={{ ...card, padding: '0.6rem 1.5rem' }}>
+      <div style={{ ...panelCard, padding: '0.6rem 1.5rem' }}>
         <ProgressBar progress={progress} profile={p} />
       </div>
 
@@ -404,8 +458,9 @@ function Centered({ p, children }: { p: ColorProfile; children: React.ReactNode 
     <main
       style={{
         minHeight: '100vh',
-        backgroundColor: p.backgroundColor,
-        color: p.textColor,
+        background: p.homePageBackground,
+        color: p.homeInk,
+        fontFamily: 'var(--font-nunito), sans-serif',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',

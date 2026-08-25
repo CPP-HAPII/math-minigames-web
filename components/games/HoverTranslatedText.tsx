@@ -9,6 +9,10 @@ interface HoverTranslatedTextProps {
   profile: ColorProfile;
   targetLanguage?: string;
   fontSize?: string;
+  /** Color for the problem text itself. Defaults to profile.contrastTextColor
+   * if omitted; callers pass this explicitly to match whatever background
+   * they're rendering the card against. */
+  textColor?: string;
 }
 
 /** Splits into alternating non-whitespace / whitespace runs — same tokenization as the Dart `RegExp(r'\S+|\s+')`. */
@@ -25,7 +29,7 @@ const TOOLTIP_DELAY_MS = 150;
  * via useHoverTranslation — same provider-agnostic pathway the Stage 12
  * translate button calls.
  */
-export default function HoverTranslatedText({ text, profile: p, targetLanguage = 'es', fontSize = '1.6rem' }: HoverTranslatedTextProps) {
+export default function HoverTranslatedText({ text, profile: p, targetLanguage = 'es', fontSize = '1.6rem', textColor }: HoverTranslatedTextProps) {
   const { translations, loadingWords, requestTranslation } = useHoverTranslation(targetLanguage);
   const [visibleTooltip, setVisibleTooltip] = useState<number | null>(null);
   const tooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -50,7 +54,7 @@ export default function HoverTranslatedText({ text, profile: p, targetLanguage =
   const tokens = text.match(TOKEN_RE) ?? [];
 
   return (
-    <p style={{ fontSize, margin: 0, color: p.contrastTextColor, textAlign: 'center' }}>
+    <p style={{ fontSize, margin: 0, fontWeight: 700, color: textColor ?? p.contrastTextColor, textAlign: 'center' }}>
       {tokens.map((token, i) => {
         if (token.trim().length === 0) return <span key={i}>{token}</span>;
 

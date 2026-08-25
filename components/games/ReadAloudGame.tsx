@@ -93,7 +93,7 @@ export default function ReadAloudGame({ question, assistLevel, onComplete }: Rea
 
   // ── Styles (shared look with TypingGame) ────────────────────────────────────
   const card: React.CSSProperties = {
-    backgroundColor: p.headerColor,
+    background: p.homeAccentGradient,
     borderRadius: '1rem',
     padding: '1.25rem 1.5rem',
     margin: '0.75rem auto',
@@ -132,7 +132,7 @@ export default function ReadAloudGame({ question, assistLevel, onComplete }: Rea
   return (
     <section
       style={{
-        backgroundColor: p.backgroundColor,
+        background: p.homePageBackground,
         color: p.textColor,
         padding: '1.5rem 1rem 3rem',
         minHeight: '100%',
@@ -153,9 +153,9 @@ export default function ReadAloudGame({ question, assistLevel, onComplete }: Rea
         `if (assistLevel == novice || intermediate)` wrapper.
       */}
       <div style={{ ...card, textAlign: 'center' }} data-assist-level={assistLevel}>
-        <HoverTranslatedText text={question.displayedProblem} profile={p} />
+        <HoverTranslatedText text={question.displayedProblem} profile={p} textColor={p.contrastTextColor} />
         {question.additionalInstructions && (
-          <p style={{ fontSize: '0.9rem', margin: '0.6rem 0 0', opacity: 0.8 }}>
+          <p style={{ fontSize: '0.9rem', fontWeight: 700, margin: '0.6rem 0 0', color: p.contrastTextColor, opacity: 0.8 }}>
             {question.additionalInstructions}
           </p>
         )}
@@ -175,7 +175,7 @@ export default function ReadAloudGame({ question, assistLevel, onComplete }: Rea
 
       {/* Speech controls + live transcript. */}
       <div style={{ ...card, textAlign: 'center' }}>
-        <p style={{ fontSize: '0.95rem', fontWeight: 600, margin: '0 0 0.75rem', color: p.contrastTextColor }}>
+        <p style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.contrastTextColor }}>
           Your phrase
         </p>
 
@@ -193,9 +193,9 @@ export default function ReadAloudGame({ question, assistLevel, onComplete }: Rea
               {speech.status === 'listening' ? '⏹ Stop Listening' : '🎤 Start Speaking'}
             </button>
             {micStatusText && (
-              <p style={{ margin: '0.6rem 0 0', fontSize: '0.9rem', opacity: 0.85 }}>{micStatusText}</p>
+              <p style={{ margin: '0.6rem 0 0', fontSize: '0.9rem', fontWeight: 700, color: p.contrastTextColor, opacity: 0.85 }}>{micStatusText}</p>
             )}
-            <p style={{ fontSize: '1.15rem', margin: '0.75rem 0 0', color: p.contrastTextColor }}>
+            <p style={{ fontSize: '1.15rem', fontWeight: 700, margin: '0.75rem 0 0', color: p.contrastTextColor }}>
               {speech.transcript || DEFAULT_TRANSCRIPT_PLACEHOLDER}
             </p>
           </>

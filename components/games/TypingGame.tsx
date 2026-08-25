@@ -70,7 +70,7 @@ export default function TypingGame({ question, assistLevel, onComplete }: Typing
 
   // ── Styles (shared look with JumbleGame) ────────────────────────────────────
   const card: React.CSSProperties = {
-    backgroundColor: p.headerColor,
+    background: p.homeAccentGradient,
     borderRadius: '1rem',
     padding: '1.25rem 1.5rem',
     margin: '0.75rem auto',
@@ -96,7 +96,7 @@ export default function TypingGame({ question, assistLevel, onComplete }: Typing
   return (
     <section
       style={{
-        backgroundColor: p.backgroundColor,
+        background: p.homePageBackground,
         color: p.textColor,
         padding: '1.5rem 1rem 3rem',
         minHeight: '100%',
@@ -116,7 +116,7 @@ export default function TypingGame({ question, assistLevel, onComplete }: Typing
         intermediate)` wrapper — hidden entirely for advanced/"Low Assist".
       */}
       <div style={{ ...card, textAlign: 'center' }} data-assist-level={assistLevel}>
-        <HoverTranslatedText text={question.displayedProblem} profile={p} />
+        <HoverTranslatedText text={question.displayedProblem} profile={p} textColor={p.contrastTextColor} />
         {assistLevel !== 'advanced' && (
           <>
             {assistLevel === 'novice' && (
@@ -135,7 +135,7 @@ export default function TypingGame({ question, assistLevel, onComplete }: Typing
       <div style={{ ...card }}>
         <label
           htmlFor="typing-answer"
-          style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.6rem', color: p.contrastTextColor }}
+          style={{ display: 'block', fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.6rem', color: p.contrastTextColor }}
         >
           Your answer
         </label>
@@ -150,6 +150,7 @@ export default function TypingGame({ question, assistLevel, onComplete }: Typing
             width: '100%',
             boxSizing: 'border-box',
             fontSize: '1.15rem',
+            fontWeight: 700,
             padding: '0.7rem 0.9rem',
             borderRadius: '0.6rem',
             border: `1px solid ${p.textColor}33`,

@@ -35,12 +35,19 @@ export default function TranslateButton({
 }: TranslateButtonProps) {
   const { status, translated, translate, speakTranslation } = useTranslation(sourceText, targetLanguage, autoTranslate);
 
+  // No background pill — transparent background blends into whatever card
+  // it's sitting on, leaving just the bold word itself. appearance: 'none'
+  // is required here: without it some browsers keep the native <button>'s
+  // own gray chrome underneath, which silently swallowed the white text
+  // (the old filled pill happened to cover that up, which is why removing
+  // the background alone made the button look like it had "disappeared").
   const button: React.CSSProperties = {
-    backgroundColor: p.headerColor,
+    appearance: 'none',
+    WebkitAppearance: 'none',
+    background: 'none',
     color: p.contrastTextColor,
     border: 'none',
-    borderRadius: '0.6rem',
-    padding: '0.55rem 1.2rem',
+    padding: 0,
     fontSize: '0.95rem',
     fontWeight: 700,
     cursor: status === 'loading' ? 'not-allowed' : 'pointer',

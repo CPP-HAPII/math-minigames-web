@@ -127,7 +127,7 @@ export default function FillBlanksGame({ question, assistLevel, onComplete }: Fi
 
   // ── Styles (shared look with JumbleGame / TypingGame) ───────────────────────
   const card: React.CSSProperties = {
-    backgroundColor: p.headerColor,
+    background: p.homeAccentGradient,
     borderRadius: '1rem',
     padding: '1.25rem 1.5rem',
     margin: '0.75rem auto',
@@ -136,13 +136,13 @@ export default function FillBlanksGame({ question, assistLevel, onComplete }: Fi
   };
 
   const optionButton = (disabled: boolean): React.CSSProperties => ({
-    backgroundColor: disabled ? p.disabledButtonColor : p.buttonColor,
-    color: p.textColor,
+    background: disabled ? p.disabledButtonColor : p.cardBackground,
+    color: p.cardTextColor,
     border: 'none',
     borderRadius: '0.5rem',
     padding: '0.6rem 1.1rem',
     fontSize: '1rem',
-    fontWeight: 600,
+    fontWeight: 700,
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.5 : 1,
   });
@@ -165,7 +165,7 @@ export default function FillBlanksGame({ question, assistLevel, onComplete }: Fi
   return (
     <section
       style={{
-        backgroundColor: p.backgroundColor,
+        background: p.homePageBackground,
         color: p.textColor,
         padding: '1.5rem 1rem 3rem',
         minHeight: '100%',
@@ -185,7 +185,7 @@ export default function FillBlanksGame({ question, assistLevel, onComplete }: Fi
         intermediate)` wrapper — hidden entirely for advanced/"Low Assist".
       */}
       <div style={{ ...card, textAlign: 'center' }} data-assist-level={assistLevel}>
-        <HoverTranslatedText text={question.displayedProblem} profile={p} />
+        <HoverTranslatedText text={question.displayedProblem} profile={p} textColor={p.contrastTextColor} />
         {assistLevel !== 'advanced' && (
           <>
             {assistLevel === 'novice' && (
@@ -202,21 +202,21 @@ export default function FillBlanksGame({ question, assistLevel, onComplete }: Fi
 
       {/* Your answer — blankForm with the picked answers dropped into the blanks. */}
       <div style={{ ...card, textAlign: 'center' }}>
-        <p style={{ fontSize: '0.95rem', fontWeight: 600, margin: '0 0 0.75rem', color: p.contrastTextColor }}>
+        <p style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.contrastTextColor }}>
           Your answer
         </p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem 0.5rem', justifyContent: 'center', alignItems: 'center', fontSize: '1.2rem', color: p.contrastTextColor }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem 0.5rem', justifyContent: 'center', alignItems: 'center', fontSize: '1.2rem', fontWeight: 700, color: p.contrastTextColor }}>
           {pieces.map((piece, i) => {
             if (piece.kind === 'filled') {
               return (
                 <span
                   key={i}
                   style={{
-                    backgroundColor: p.buttonColor,
-                    color: p.textColor,
+                    background: p.cardBackground,
+                    color: p.cardTextColor,
                     borderRadius: '0.4rem',
                     padding: '0.1rem 0.55rem',
-                    fontWeight: 600,
+                    fontWeight: 700,
                   }}
                 >
                   {piece.value}

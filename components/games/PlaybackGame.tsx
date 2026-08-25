@@ -100,7 +100,7 @@ export default function PlaybackGame({ question, assistLevel, onComplete }: Play
 
   // ── Styles (shared look with JumbleGame) ────────────────────────────────────
   const card: React.CSSProperties = {
-    backgroundColor: p.headerColor,
+    background: p.homeAccentGradient,
     borderRadius: '1rem',
     padding: '1.25rem 1.5rem',
     margin: '0.75rem auto',
@@ -109,13 +109,13 @@ export default function PlaybackGame({ question, assistLevel, onComplete }: Play
   };
 
   const wordButton = (disabled: boolean): React.CSSProperties => ({
-    backgroundColor: disabled ? p.disabledButtonColor : p.buttonColor,
-    color: p.textColor,
+    background: disabled ? p.disabledButtonColor : p.cardBackground,
+    color: p.cardTextColor,
     border: 'none',
     borderRadius: '0.5rem',
     padding: '0.6rem 1.1rem',
     fontSize: '1rem',
-    fontWeight: 600,
+    fontWeight: 700,
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.5 : 1,
   });
@@ -161,7 +161,7 @@ export default function PlaybackGame({ question, assistLevel, onComplete }: Play
   return (
     <section
       style={{
-        backgroundColor: p.backgroundColor,
+        background: p.homePageBackground,
         color: p.textColor,
         padding: '1.5rem 1rem 3rem',
         minHeight: '100%',
@@ -198,7 +198,7 @@ export default function PlaybackGame({ question, assistLevel, onComplete }: Play
           </button>
         </div>
         {playbackStatusText && (
-          <p style={{ margin: '0.6rem 0 0', fontSize: '0.9rem', opacity: 0.85 }}>{playbackStatusText}</p>
+          <p style={{ margin: '0.6rem 0 0', fontSize: '0.9rem', fontWeight: 700, color: p.contrastTextColor, opacity: 0.85 }}>{playbackStatusText}</p>
         )}
         {assistLevel !== 'advanced' && (
           <TranslateButton
@@ -211,12 +211,12 @@ export default function PlaybackGame({ question, assistLevel, onComplete }: Play
 
       {/* Your answer — selected tokens in order. */}
       <div style={{ ...card, textAlign: 'center' }}>
-        <p style={{ fontSize: '0.95rem', fontWeight: 600, margin: '0 0 0.75rem', color: p.contrastTextColor }}>
+        <p style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.contrastTextColor }}>
           Your answer
         </p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center', minHeight: '1.5rem' }}>
           {selectedTokens.map((token, i) => (
-            <span key={i} style={{ fontSize: '1.15rem', color: p.contrastTextColor }}>
+            <span key={i} style={{ fontSize: '1.15rem', fontWeight: 700, color: p.contrastTextColor }}>
               {token}
             </span>
           ))}

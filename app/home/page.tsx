@@ -13,6 +13,7 @@ import { computeContinueTarget, computeSublevelProgress } from '@/lib/services/p
 import { LEVEL_MAP, SUBLEVEL_MAP } from '@/lib/levelMap';
 import ContinueBanner from '@/components/home/ContinueBanner';
 import LevelGrid, { type LevelCardData } from '@/components/home/LevelGrid';
+import ThemeSwitcher from '@/components/ThemeSwitcher';
 import type { AssistLevel, AnyGameData } from '@/lib/types';
 
 // ── Static selector data ──────────────────────────────────────────────────────
@@ -31,8 +32,6 @@ export default function HomePage() {
   const userId     = useUserStore((s) => s.userId);
   const level      = useAssistStore((s) => s.level);
   const setLevel   = useAssistStore((s) => s.setLevel);
-  const themeIndex = useThemeStore((s) => s.themeIndex);
-  const setTheme   = useThemeStore((s) => s.setTheme);
   const profile    = useThemeStore(selectActiveProfile);
 
   // Hydration guard — Zustand persist stores read localStorage on client only.
@@ -154,32 +153,7 @@ export default function HomePage() {
           Welcome, {hydrated ? (userId || 'Student') : '…'}!
         </p>
 
-        {/* Theme switcher */}
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {themes.map((themeOption, i) => {
-            const isActive = i === themeIndex;
-            return (
-              <button
-                key={themeOption.idKey}
-                onClick={() => setTheme(i)}
-                aria-label={`Switch to ${themeOption.homeLabel} theme`}
-                style={{
-                  fontFamily: 'var(--font-nunito), sans-serif',
-                  fontWeight: 700,
-                  fontSize: '13px',
-                  padding: '9px 16px',
-                  borderRadius: '999px',
-                  border: isActive ? '2px solid transparent' : `2px solid ${p.homeThemeButtonInactiveBorder}`,
-                  background: isActive ? p.homeThemeButtonActiveBackground : p.homeThemeButtonInactiveBackground,
-                  color: isActive ? p.homeThemeButtonActiveColor : p.homeThemeButtonInactiveColor,
-                  cursor: 'pointer',
-                }}
-              >
-                {themeOption.homeLabel}
-              </button>
-            );
-          })}
-        </div>
+        <ThemeSwitcher />
       </header>
 
       <div style={{ maxWidth: '980px', margin: '0 auto', padding: '28px 30px 60px' }}>
