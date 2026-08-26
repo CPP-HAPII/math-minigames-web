@@ -1,6 +1,8 @@
 # MathMinigames (Web)
 
-A Next.js / TypeScript / Firebase web port of **MathMinigames** — a set of bilingual math-language minigames built by Dr. Ben Steichen's HCI lab (CPP-HAPII) at Cal Poly Pomona, in collaboration with Santa Clara University. The original app was built in Flutter; this repo is a full rewrite of that app for the web, plus new features not present in the Flutter version (assist-level scaffolding, interaction logging, and an in-progress teacher-facing analytics portal).
+A Next.js / TypeScript / Firebase web port of **MathMinigames** — a set of bilingual math-language minigames built by Dr. Ben Steichen's HCI lab (CPP-HAPII) at Cal Poly Pomona, in collaboration with Santa Clara University. The original app was built in Flutter; this repo is a full rewrite of that app for the web, plus new features not present in the Flutter version (assist-level scaffolding, interaction logging, and a teacher-facing analytics portal).
+
+**Live demo:** [math-minigames-web.vercel.app](https://math-minigames-web.vercel.app) &middot; **Teacher dashboard:** [math-minigames-web.vercel.app/teacher-portal/overview](https://math-minigames-web.vercel.app/teacher-portal/overview)
 
 ## Background
 
@@ -33,10 +35,12 @@ Three tiers of scaffolding, selectable per user:
 Every question attempt is logged per user with correctness, time taken, and which assist interaction (if any) was used — recorded via a priority scheme (`advanced < intermediate < novice`) that captures the *highest-tier interaction actually used* per question, not just the user's assigned level. This means a student assigned "intermediate" who also happens to trigger a novice-tier interaction (e.g., "Play translation") gets that logged accurately.
 
 ### Teacher-facing analytics portal
-An educator dashboard (`/teacher-portal`), built and live, reachable without restriction (see "No login/auth" above), covering:
+An educator dashboard ([`/teacher-portal`](https://math-minigames-web.vercel.app/teacher-portal/overview)), built and live, reachable without restriction (see "No login/auth" above), covering:
 - **Class Overview** — class-wide skill accuracy, weak-topic detection, average time per skill, with chart visualizations
 - **Student Detail** — per-student breakdown of the same, via a student picker, with chart visualizations
 - **Assist Usage** — class-wide interaction-type ranking and per-student assist-tier breakdown, with chart visualizations
+
+It has its own color system (three dashboard-tuned dark themes — Green, Blue, Plum — switchable in the header), separate from the student-facing theme above, so a kid picking a different play-screen theme at home never changes what a teacher sees.
 
 Not yet built: teacher controls for selecting question sequences/difficulty.
 
@@ -89,6 +93,7 @@ Originally built across 15 stages (data layer, game types, sequencing, translati
 - ✅ Unit tests for the analytics service layer — 100% coverage, cross-checked against real audit data
 - ✅ Levels/sublevels migration — questions organized into 5 levels with sublevels, plus a Continue banner that resumes progress
 - ✅ Redesigned student-facing UI — new home screen (level grid, Continue banner), a 3-theme color system with a switcher on both the welcome and home screens, and matching play-screen theming (question cards, choice buttons, calculator, translate/speak controls)
+- ✅ Teacher portal redesign — given its own 3-theme color system (Green/Blue/Plum), decoupled from the student-facing themes above, plus real card elevation and a bolder, higher-contrast type treatment
 - 🔲 Teacher controls for selecting sequences/difficulty
 
 Auth/role gating is intentionally out of scope — see "No login/auth, by design" above.
