@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useThemeStore, selectActiveProfile } from '@/lib/stores/themeStore';
-import { themes } from '@/lib/themes';
+import { useTeacherDashboardThemeStore, selectActiveDashboardTheme } from '@/lib/stores/teacherDashboardThemeStore';
+import { useHydrated } from '@/lib/hooks/useHydrated';
+import { teacherDashboardThemes } from '@/lib/teacherDashboardThemes';
 import { fetchAllQuestionRows, type QuestionAttemptRow } from '@/lib/services/analyticsDataService';
 import { computeSkillAccuracyByStudent, detectWeakTopics, computeAverageTimeBySkill } from '@/lib/services/analyticsService';
 import SkillBarChart, { type SkillBarDatum } from '@/components/teacher/charts/SkillBarChart';
@@ -13,10 +14,9 @@ const WEAK_TOPIC_THRESHOLD = 0.6;
 type Status = 'loading' | 'loaded' | 'error';
 
 export default function StudentDetailPage() {
-  const profile = useThemeStore(selectActiveProfile);
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => setHydrated(true), []);
-  const p = hydrated ? profile : themes[0];
+  const profile = useTeacherDashboardThemeStore(selectActiveDashboardTheme);
+  const hydrated = useHydrated();
+  const p = hydrated ? profile : teacherDashboardThemes[0];
 
   // Data fetch — identical pattern to app/teacher-portal/overview/page.tsx:
   // a single `result` value (null while in flight) that status/rows/error
@@ -59,7 +59,9 @@ export default function StudentDetailPage() {
 
   // ── Styles (matches Class Overview's card/row convention) ───────────────
   const card: React.CSSProperties = {
-    backgroundColor: p.headerColor,
+    backgroundColor: p.cardBackground,
+    border: `1px solid ${p.cardBorder}`,
+    boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
     borderRadius: '1rem',
     padding: '1.25rem 1.75rem',
     marginBottom: '1rem',
@@ -67,8 +69,8 @@ export default function StudentDetailPage() {
   };
 
   const actionButton: React.CSSProperties = {
-    backgroundColor: p.buttonColor,
-    color: p.contrastTextColor,
+    backgroundColor: p.accent,
+    color: p.accentText,
     border: 'none',
     borderRadius: '0.6rem',
     padding: '0.55rem 1.2rem',
@@ -87,7 +89,7 @@ export default function StudentDetailPage() {
     gap: '0.4rem',
   };
 
-  const row = (color: string, weight = 400): React.CSSProperties => ({
+  const row = (color: string, weight = 700): React.CSSProperties => ({
     fontSize: '0.9rem',
     color,
     fontWeight: weight,
@@ -98,12 +100,12 @@ export default function StudentDetailPage() {
 
   // Student-picker button — same active/inactive pattern as home/page.tsx's selectorBtn.
   const studentBtn = (active: boolean): React.CSSProperties => ({
-    backgroundColor: active ? p.buttonColor : p.backgroundColor,
-    color: p.textColor,
-    border: `1.5px solid ${p.textColor}22`,
+    backgroundColor: active ? p.accent : p.pickerInactiveBackground,
+    color: active ? p.accentText : p.text,
+    border: `1.5px solid ${active ? 'transparent' : p.navBorder}`,
     borderRadius: '0.5rem',
     padding: '0.5rem 1.1rem',
-    fontWeight: active ? 700 : 400,
+    fontWeight: 700,
     cursor: 'pointer',
     fontSize: '0.95rem',
     transition: 'background-color 0.15s',
@@ -113,7 +115,7 @@ export default function StudentDetailPage() {
   if (status === 'loading') {
     return (
       <div style={{ ...card, textAlign: 'center' }}>
-        <p style={{ margin: 0, color: p.contrastTextColor }}>Loading student data…</p>
+        <p style={{ margin: 0, color: p.text }}>Loading student data…</p>
       </div>
     );
   }
@@ -122,9 +124,9 @@ export default function StudentDetailPage() {
   if (status === 'error') {
     return (
       <div style={{ ...card, textAlign: 'center' }}>
-        <p style={{ margin: 0, fontWeight: 700, color: p.contrastTextColor }}>Couldn&rsquo;t load student data.</p>
+        <p style={{ margin: 0, fontWeight: 700, color: p.text }}>Couldn&rsquo;t load student data.</p>
         {errorMessage && (
-          <p style={{ margin: '0.5rem 0 0', fontSize: '0.85rem', opacity: 0.8, color: p.contrastTextColor }}>
+          <p style={{ margin: '0.5rem 0 0', fontSize: '0.85rem', opacity: 0.8, color: p.text }}>
             {errorMessage}
           </p>
         )}
@@ -139,8 +141,8 @@ export default function StudentDetailPage() {
   if (rows.length === 0) {
     return (
       <div style={{ ...card, textAlign: 'center' }}>
-        <p style={{ margin: 0, fontWeight: 700, color: p.contrastTextColor }}>No data yet</p>
-        <p style={{ margin: '0.5rem 0 0', fontSize: '0.9rem', opacity: 0.85, color: p.contrastTextColor }}>
+        <p style={{ margin: 0, fontWeight: 700, color: p.text }}>No data yet</p>
+        <p style={{ margin: '0.5rem 0 0', fontSize: '0.9rem', opacity: 0.85, color: p.text }}>
           No students have completed any questions yet.
         </p>
       </div>
@@ -174,7 +176,7 @@ export default function StudentDetailPage() {
 
   const detailsSummary: React.CSSProperties = {
     fontSize: '0.8rem',
-    color: p.contrastTextColor,
+    color: p.text,
     opacity: 0.75,
     cursor: 'pointer',
     marginTop: '0.75rem',
@@ -183,7 +185,7 @@ export default function StudentDetailPage() {
   return (
     <div>
       <div style={card}>
-        <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.contrastTextColor }}>
+        <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.text }}>
           Select a Student
         </h2>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
@@ -197,25 +199,25 @@ export default function StudentDetailPage() {
 
       {selectedUserId === null ? (
         <div style={{ ...card, textAlign: 'center' }}>
-          <p style={{ margin: 0, fontSize: '0.9rem', color: p.contrastTextColor, opacity: 0.85 }}>
+          <p style={{ margin: 0, fontSize: '0.9rem', color: p.text, opacity: 0.85 }}>
             Select a student above to view their accuracy, weak topics, and timing.
           </p>
         </div>
       ) : (
         <>
           <div style={card}>
-            <p style={{ margin: 0, fontSize: '0.95rem', color: p.contrastTextColor }}>
+            <p style={{ margin: 0, fontSize: '0.95rem', color: p.text }}>
               <strong>{selectedUserId}</strong> &middot; <strong>{selectedRows.length}</strong> question attempt
               {selectedRows.length === 1 ? '' : 's'} logged
             </p>
           </div>
 
           <div style={card}>
-            <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.contrastTextColor }}>
+            <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.text }}>
               Accuracy by Skill
             </h2>
             {selectedAccuracy.length === 0 ? (
-              <p style={{ margin: 0, fontSize: '0.9rem', color: p.contrastTextColor, opacity: 0.85 }}>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: p.text, opacity: 0.85 }}>
                 No skill data recorded for this student.
               </p>
             ) : (
@@ -233,7 +235,7 @@ export default function StudentDetailPage() {
                     {selectedAccuracy.map((a) => (
                       <li
                         key={a.skill}
-                        style={row(selectedWeakSkillSet.has(a.skill) ? p.clearAnswerButtonColor : p.contrastTextColor)}
+                        style={row(selectedWeakSkillSet.has(a.skill) ? p.warning : p.text)}
                       >
                         <span>{a.skill}</span>
                         <span>
@@ -248,17 +250,17 @@ export default function StudentDetailPage() {
           </div>
 
           <div style={card}>
-            <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.contrastTextColor }}>
+            <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.text }}>
               Weak Topics (below {Math.round(WEAK_TOPIC_THRESHOLD * 100)}%)
             </h2>
             {selectedWeakTopics.length === 0 ? (
-              <p style={{ margin: 0, fontSize: '0.9rem', color: p.contrastTextColor, opacity: 0.85 }}>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: p.text, opacity: 0.85 }}>
                 No weak topics — every skill is at or above {Math.round(WEAK_TOPIC_THRESHOLD * 100)}% for this student.
               </p>
             ) : (
               <ul style={rowList}>
                 {selectedWeakTopics.map((w) => (
-                  <li key={w.skill} style={row(p.clearAnswerButtonColor, 700)}>
+                  <li key={w.skill} style={row(p.warning, 700)}>
                     <span>{w.skill}</span>
                     <span>
                       {w.correct}/{w.attempts} ({Math.round(w.accuracy * 100)}%)
@@ -270,11 +272,11 @@ export default function StudentDetailPage() {
           </div>
 
           <div style={card}>
-            <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.contrastTextColor }}>
+            <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.text }}>
               Average Time per Skill
             </h2>
             {selectedTiming.length === 0 ? (
-              <p style={{ margin: 0, fontSize: '0.9rem', color: p.contrastTextColor, opacity: 0.85 }}>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: p.text, opacity: 0.85 }}>
                 No timing data recorded for this student.
               </p>
             ) : (
@@ -289,7 +291,7 @@ export default function StudentDetailPage() {
                   <summary style={detailsSummary}>View as table</summary>
                   <ul style={{ ...rowList, marginTop: '0.5rem' }}>
                     {selectedTiming.map((t) => (
-                      <li key={t.skill} style={row(p.contrastTextColor)}>
+                      <li key={t.skill} style={row(p.text)}>
                         <span>{t.skill}</span>
                         <span>
                           {t.averageTimeTakenInSeconds.toFixed(1)}s avg ({t.attempts} attempt{t.attempts === 1 ? '' : 's'})

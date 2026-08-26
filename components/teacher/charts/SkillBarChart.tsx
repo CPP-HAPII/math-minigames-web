@@ -3,7 +3,7 @@
 import { Bar, BarChart, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { TooltipContentProps, YAxisTickContentProps } from 'recharts';
 import type { ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent';
-import type { ColorProfile } from '@/lib/themes';
+import type { DashboardTheme } from '@/lib/teacherDashboardThemes';
 
 export interface SkillBarDatum {
   skill: string;
@@ -19,7 +19,7 @@ export interface SkillBarDatum {
 
 interface SkillBarChartProps {
   data: SkillBarDatum[];
-  profile: ColorProfile;
+  profile: DashboardTheme;
   /** Formats an X-axis tick value (e.g. `(v) => \`${v}%\``). */
   axisFormatter: (value: number) => string;
   /** Fixed axis domain, e.g. [0, 100] for a percentage. Omit to auto-scale to the data with headroom. */
@@ -64,7 +64,7 @@ function SkillTick(
   props: YAxisTickContentProps,
   data: SkillBarDatum[],
   maxCharsPerLine: number,
-  profile: ColorProfile,
+  profile: DashboardTheme,
 ) {
   const x = Number(props.x) || 0;
   const y = Number(props.y) || 0;
@@ -77,11 +77,17 @@ function SkillTick(
   return (
     <g transform={`translate(${x},${y})`}>
       {datum?.highlighted && (
-        <text x={-8} y={0} dy={startDy} textAnchor="end" fontSize={11} fill={profile.clearAnswerButtonColor}>
+        <text x={-8} y={0} dy={startDy} textAnchor="end" fontSize={11} fontWeight={700} fill={profile.warning}>
           {WARNING_ICON}
         </text>
       )}
-      <text textAnchor="end" x={datum?.highlighted ? -20 : -8} fontSize={12} fill={profile.contrastTextColor}>
+      <text
+        textAnchor="end"
+        x={datum?.highlighted ? -20 : -8}
+        fontSize={12}
+        fontWeight={700}
+        fill={profile.text}
+      >
         {lines.map((line, i) => (
           <tspan key={i} x={datum?.highlighted ? -20 : -8} dy={i === 0 ? startDy : lineHeight}>
             {line}
@@ -94,7 +100,7 @@ function SkillTick(
 
 function ChartTooltip(
   { active, payload }: TooltipContentProps<ValueType, NameType>,
-  profile: ColorProfile,
+  profile: DashboardTheme,
   highlightedWord: string,
 ) {
   if (!active || !payload?.length) return null;
@@ -102,21 +108,19 @@ function ChartTooltip(
   return (
     <div
       style={{
-        backgroundColor: profile.backgroundColor,
-        border: `1px solid ${profile.buttonColor}`,
+        backgroundColor: profile.cardBackground,
+        border: `1px solid ${profile.accent}`,
         borderRadius: '0.5rem',
         padding: '0.5rem 0.75rem',
         maxWidth: '220px',
       }}
     >
-      <p style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: profile.contrastTextColor }}>
-        {item.valueLabel}
-      </p>
-      <p style={{ margin: '0.15rem 0 0', fontSize: '0.85rem', color: profile.contrastTextColor }}>
+      <p style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: profile.text }}>{item.valueLabel}</p>
+      <p style={{ margin: '0.15rem 0 0', fontSize: '0.85rem', color: profile.text }}>
         {item.skill}
         {item.highlighted ? ` ${WARNING_ICON} ${highlightedWord}` : ''}
       </p>
-      <p style={{ margin: '0.15rem 0 0', fontSize: '0.8rem', color: profile.contrastTextColor, opacity: 0.75 }}>
+      <p style={{ margin: '0.15rem 0 0', fontSize: '0.8rem', color: profile.text, opacity: 0.75 }}>
         {item.detailLabel}
       </p>
     </div>
@@ -138,25 +142,21 @@ export default function SkillBarChart({ data, profile: p, axisFormatter, domain,
     const [item] = data;
     return (
       <div style={{ textAlign: 'center', padding: '0.5rem 0' }}>
-        <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: p.contrastTextColor }}>
+        <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: p.text }}>
           {item.skill}
-          {item.highlighted && (
-            <span style={{ color: p.clearAnswerButtonColor }}> {WARNING_ICON} {highlightedWord}</span>
-          )}
+          {item.highlighted && <span style={{ color: p.warning }}> {WARNING_ICON} {highlightedWord}</span>}
         </p>
         <p
           style={{
             margin: '0.25rem 0 0',
             fontSize: '2.25rem',
             fontWeight: 700,
-            color: item.highlighted ? p.clearAnswerButtonColor : p.contrastTextColor,
+            color: item.highlighted ? p.warning : p.text,
           }}
         >
           {item.valueLabel}
         </p>
-        <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: p.contrastTextColor, opacity: 0.8 }}>
-          {item.detailLabel}
-        </p>
+        <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: p.text, opacity: 0.8 }}>{item.detailLabel}</p>
       </div>
     );
   }
@@ -179,32 +179,28 @@ export default function SkillBarChart({ data, profile: p, axisFormatter, domain,
           domain={domain ?? [0, (max: number) => Math.ceil(max * 1.15)]}
           allowDecimals={false}
           tickFormatter={axisFormatter}
-          tick={{ fontSize: 11, fill: p.contrastTextColor, fillOpacity: 0.7 }}
-          axisLine={{ stroke: p.disabledButtonColor, strokeOpacity: 0.4 }}
+          tick={{ fontSize: 11, fontWeight: 700, fill: p.text, fillOpacity: 0.7 }}
+          axisLine={{ stroke: p.axisLine, strokeOpacity: 0.7 }}
           tickLine={false}
         />
         <YAxis
           type="category"
           dataKey="skill"
           width={axisWidth}
-          axisLine={{ stroke: p.disabledButtonColor, strokeOpacity: 0.4 }}
+          axisLine={{ stroke: p.axisLine, strokeOpacity: 0.7 }}
           tickLine={false}
           interval={0}
           tick={(tickProps: YAxisTickContentProps) => SkillTick(tickProps, data, maxCharsPerLine, p)}
         />
         <Tooltip
-          cursor={{ fill: p.contrastTextColor, fillOpacity: 0.08 }}
+          cursor={{ fill: p.text, fillOpacity: 0.08 }}
           content={(tooltipProps) => ChartTooltip(tooltipProps, p, highlightedWord)}
         />
         <Bar dataKey="value" barSize={22} radius={[0, 4, 4, 0]} activeBar={{ fillOpacity: 0.85 }}>
           {data.map((entry) => (
-            <Cell key={entry.skill} fill={entry.highlighted ? p.clearAnswerButtonColor : p.buttonColor} />
+            <Cell key={entry.skill} fill={entry.highlighted ? p.warning : p.accent} />
           ))}
-          <LabelList
-            dataKey="valueLabel"
-            position="right"
-            style={{ fill: p.contrastTextColor, fontSize: 12, fontWeight: 700 }}
-          />
+          <LabelList dataKey="valueLabel" position="right" style={{ fill: p.text, fontSize: 12, fontWeight: 700 }} />
         </Bar>
       </BarChart>
     </ResponsiveContainer>

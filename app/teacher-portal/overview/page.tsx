@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useThemeStore, selectActiveProfile } from '@/lib/stores/themeStore';
-import { themes } from '@/lib/themes';
+import { useTeacherDashboardThemeStore, selectActiveDashboardTheme } from '@/lib/stores/teacherDashboardThemeStore';
+import { useHydrated } from '@/lib/hooks/useHydrated';
+import { teacherDashboardThemes } from '@/lib/teacherDashboardThemes';
 import { fetchAllQuestionRows, type QuestionAttemptRow } from '@/lib/services/analyticsDataService';
 import { computeSkillAccuracy, detectWeakTopics, computeAverageTimeBySkill } from '@/lib/services/analyticsService';
 import SkillBarChart, { type SkillBarDatum } from '@/components/teacher/charts/SkillBarChart';
@@ -13,10 +14,9 @@ const WEAK_TOPIC_THRESHOLD = 0.6;
 type Status = 'loading' | 'loaded' | 'error';
 
 export default function ClassOverviewPage() {
-  const profile = useThemeStore(selectActiveProfile);
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => setHydrated(true), []);
-  const p = hydrated ? profile : themes[0];
+  const profile = useTeacherDashboardThemeStore(selectActiveDashboardTheme);
+  const hydrated = useHydrated();
+  const p = hydrated ? profile : teacherDashboardThemes[0];
 
   // Data fetch — mirrors PlayContent.tsx's Firestore-write effect exactly:
   // a single `result` value (null while in flight) that status/rows/error
@@ -57,7 +57,9 @@ export default function ClassOverviewPage() {
 
   // ── Styles (matches PlaceholderSection / PlayContent's card convention) ──
   const card: React.CSSProperties = {
-    backgroundColor: p.headerColor,
+    backgroundColor: p.cardBackground,
+    border: `1px solid ${p.cardBorder}`,
+    boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
     borderRadius: '1rem',
     padding: '1.25rem 1.75rem',
     marginBottom: '1rem',
@@ -65,8 +67,8 @@ export default function ClassOverviewPage() {
   };
 
   const actionButton: React.CSSProperties = {
-    backgroundColor: p.buttonColor,
-    color: p.contrastTextColor,
+    backgroundColor: p.accent,
+    color: p.accentText,
     border: 'none',
     borderRadius: '0.6rem',
     padding: '0.55rem 1.2rem',
@@ -85,7 +87,7 @@ export default function ClassOverviewPage() {
     gap: '0.4rem',
   };
 
-  const row = (color: string, weight = 400): React.CSSProperties => ({
+  const row = (color: string, weight = 700): React.CSSProperties => ({
     fontSize: '0.9rem',
     color,
     fontWeight: weight,
@@ -98,7 +100,7 @@ export default function ClassOverviewPage() {
   if (status === 'loading') {
     return (
       <div style={{ ...card, textAlign: 'center' }}>
-        <p style={{ margin: 0, color: p.contrastTextColor }}>Loading class data…</p>
+        <p style={{ margin: 0, color: p.text }}>Loading class data…</p>
       </div>
     );
   }
@@ -107,9 +109,9 @@ export default function ClassOverviewPage() {
   if (status === 'error') {
     return (
       <div style={{ ...card, textAlign: 'center' }}>
-        <p style={{ margin: 0, fontWeight: 700, color: p.contrastTextColor }}>Couldn&rsquo;t load class data.</p>
+        <p style={{ margin: 0, fontWeight: 700, color: p.text }}>Couldn&rsquo;t load class data.</p>
         {errorMessage && (
-          <p style={{ margin: '0.5rem 0 0', fontSize: '0.85rem', opacity: 0.8, color: p.contrastTextColor }}>
+          <p style={{ margin: '0.5rem 0 0', fontSize: '0.85rem', opacity: 0.8, color: p.text }}>
             {errorMessage}
           </p>
         )}
@@ -124,8 +126,8 @@ export default function ClassOverviewPage() {
   if (rows.length === 0) {
     return (
       <div style={{ ...card, textAlign: 'center' }}>
-        <p style={{ margin: 0, fontWeight: 700, color: p.contrastTextColor }}>No data yet</p>
-        <p style={{ margin: '0.5rem 0 0', fontSize: '0.9rem', opacity: 0.85, color: p.contrastTextColor }}>
+        <p style={{ margin: 0, fontWeight: 700, color: p.text }}>No data yet</p>
+        <p style={{ margin: '0.5rem 0 0', fontSize: '0.9rem', opacity: 0.85, color: p.text }}>
           No students have completed any questions yet.
         </p>
       </div>
@@ -156,7 +158,7 @@ export default function ClassOverviewPage() {
 
   const detailsSummary: React.CSSProperties = {
     fontSize: '0.8rem',
-    color: p.contrastTextColor,
+    color: p.text,
     opacity: 0.75,
     cursor: 'pointer',
     marginTop: '0.75rem',
@@ -165,14 +167,14 @@ export default function ClassOverviewPage() {
   return (
     <div>
       <div style={card}>
-        <p style={{ margin: 0, fontSize: '0.95rem', color: p.contrastTextColor }}>
+        <p style={{ margin: 0, fontSize: '0.95rem', color: p.text }}>
           <strong>{distinctStudents}</strong> student{distinctStudents === 1 ? '' : 's'} &middot;{' '}
           <strong>{rows.length}</strong> question attempt{rows.length === 1 ? '' : 's'} logged
         </p>
       </div>
 
       <div style={card}>
-        <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.contrastTextColor }}>
+        <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.text }}>
           Accuracy by Skill
         </h2>
         <SkillBarChart
@@ -186,7 +188,7 @@ export default function ClassOverviewPage() {
           <summary style={detailsSummary}>View as table</summary>
           <ul style={{ ...rowList, marginTop: '0.5rem' }}>
             {accuracy.map((a) => (
-              <li key={a.skill} style={row(weakSkillSet.has(a.skill) ? p.clearAnswerButtonColor : p.contrastTextColor)}>
+              <li key={a.skill} style={row(weakSkillSet.has(a.skill) ? p.warning : p.text)}>
                 <span>{a.skill}</span>
                 <span>
                   {a.correct}/{a.attempts} ({Math.round(a.accuracy * 100)}%)
@@ -198,17 +200,17 @@ export default function ClassOverviewPage() {
       </div>
 
       <div style={card}>
-        <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.contrastTextColor }}>
+        <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.text }}>
           Weak Topics (below {Math.round(WEAK_TOPIC_THRESHOLD * 100)}%)
         </h2>
         {weakTopics.length === 0 ? (
-          <p style={{ margin: 0, fontSize: '0.9rem', color: p.contrastTextColor, opacity: 0.85 }}>
+          <p style={{ margin: 0, fontSize: '0.9rem', color: p.text, opacity: 0.85 }}>
             No weak topics — every skill is at or above {Math.round(WEAK_TOPIC_THRESHOLD * 100)}% class-wide.
           </p>
         ) : (
           <ul style={rowList}>
             {weakTopics.map((w) => (
-              <li key={w.skill} style={row(p.clearAnswerButtonColor, 700)}>
+              <li key={w.skill} style={row(p.warning, 700)}>
                 <span>{w.skill}</span>
                 <span>
                   {w.correct}/{w.attempts} ({Math.round(w.accuracy * 100)}%)
@@ -220,7 +222,7 @@ export default function ClassOverviewPage() {
       </div>
 
       <div style={card}>
-        <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.contrastTextColor }}>
+        <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.text }}>
           Average Time per Skill
         </h2>
         <SkillBarChart
@@ -233,7 +235,7 @@ export default function ClassOverviewPage() {
           <summary style={detailsSummary}>View as table</summary>
           <ul style={{ ...rowList, marginTop: '0.5rem' }}>
             {timing.map((t) => (
-              <li key={t.skill} style={row(p.contrastTextColor)}>
+              <li key={t.skill} style={row(p.text)}>
                 <span>{t.skill}</span>
                 <span>
                   {t.averageTimeTakenInSeconds.toFixed(1)}s avg ({t.attempts} attempt{t.attempts === 1 ? '' : 's'})

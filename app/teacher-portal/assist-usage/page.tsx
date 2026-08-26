@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useThemeStore, selectActiveProfile } from '@/lib/stores/themeStore';
-import { themes } from '@/lib/themes';
+import { useTeacherDashboardThemeStore, selectActiveDashboardTheme } from '@/lib/stores/teacherDashboardThemeStore';
+import { useHydrated } from '@/lib/hooks/useHydrated';
+import { teacherDashboardThemes } from '@/lib/teacherDashboardThemes';
 import type { AssistLevel } from '@/lib/types';
 import { fetchAllQuestionRows, type QuestionAttemptRow } from '@/lib/services/analyticsDataService';
 import { computeAssistUsageByStudent, computeInteractionTypeCounts } from '@/lib/services/analyticsService';
@@ -18,10 +19,9 @@ const TIER_LABELS: { key: AssistLevel; label: string }[] = [
 ];
 
 export default function AssistUsagePage() {
-  const profile = useThemeStore(selectActiveProfile);
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => setHydrated(true), []);
-  const p = hydrated ? profile : themes[0];
+  const profile = useTeacherDashboardThemeStore(selectActiveDashboardTheme);
+  const hydrated = useHydrated();
+  const p = hydrated ? profile : teacherDashboardThemes[0];
 
   // Data fetch — identical pattern to Overview/Student Detail: a single
   // `result` value (null while in flight), a `cancelled` guard, setState only
@@ -62,7 +62,9 @@ export default function AssistUsagePage() {
 
   // ── Styles (matches Overview / Student Detail's card/row convention) ────
   const card: React.CSSProperties = {
-    backgroundColor: p.headerColor,
+    backgroundColor: p.cardBackground,
+    border: `1px solid ${p.cardBorder}`,
+    boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
     borderRadius: '1rem',
     padding: '1.25rem 1.75rem',
     marginBottom: '1rem',
@@ -70,8 +72,8 @@ export default function AssistUsagePage() {
   };
 
   const actionButton: React.CSSProperties = {
-    backgroundColor: p.buttonColor,
-    color: p.contrastTextColor,
+    backgroundColor: p.accent,
+    color: p.accentText,
     border: 'none',
     borderRadius: '0.6rem',
     padding: '0.55rem 1.2rem',
@@ -90,7 +92,7 @@ export default function AssistUsagePage() {
     gap: '0.4rem',
   };
 
-  const row = (color: string, weight = 400): React.CSSProperties => ({
+  const row = (color: string, weight = 700): React.CSSProperties => ({
     fontSize: '0.9rem',
     color,
     fontWeight: weight,
@@ -101,12 +103,12 @@ export default function AssistUsagePage() {
 
   // Student-picker button — same pattern as Student Detail's studentBtn / home/page.tsx's selectorBtn.
   const studentBtn = (active: boolean): React.CSSProperties => ({
-    backgroundColor: active ? p.buttonColor : p.backgroundColor,
-    color: p.textColor,
-    border: `1.5px solid ${p.textColor}22`,
+    backgroundColor: active ? p.accent : p.pickerInactiveBackground,
+    color: active ? p.accentText : p.text,
+    border: `1.5px solid ${active ? 'transparent' : p.navBorder}`,
     borderRadius: '0.5rem',
     padding: '0.5rem 1.1rem',
-    fontWeight: active ? 700 : 400,
+    fontWeight: 700,
     cursor: 'pointer',
     fontSize: '0.95rem',
     transition: 'background-color 0.15s',
@@ -116,7 +118,7 @@ export default function AssistUsagePage() {
   if (status === 'loading') {
     return (
       <div style={{ ...card, textAlign: 'center' }}>
-        <p style={{ margin: 0, color: p.contrastTextColor }}>Loading assist-usage data…</p>
+        <p style={{ margin: 0, color: p.text }}>Loading assist-usage data…</p>
       </div>
     );
   }
@@ -125,9 +127,9 @@ export default function AssistUsagePage() {
   if (status === 'error') {
     return (
       <div style={{ ...card, textAlign: 'center' }}>
-        <p style={{ margin: 0, fontWeight: 700, color: p.contrastTextColor }}>Couldn&rsquo;t load assist-usage data.</p>
+        <p style={{ margin: 0, fontWeight: 700, color: p.text }}>Couldn&rsquo;t load assist-usage data.</p>
         {errorMessage && (
-          <p style={{ margin: '0.5rem 0 0', fontSize: '0.85rem', opacity: 0.8, color: p.contrastTextColor }}>
+          <p style={{ margin: '0.5rem 0 0', fontSize: '0.85rem', opacity: 0.8, color: p.text }}>
             {errorMessage}
           </p>
         )}
@@ -142,8 +144,8 @@ export default function AssistUsagePage() {
   if (rows.length === 0) {
     return (
       <div style={{ ...card, textAlign: 'center' }}>
-        <p style={{ margin: 0, fontWeight: 700, color: p.contrastTextColor }}>No data yet</p>
-        <p style={{ margin: '0.5rem 0 0', fontSize: '0.9rem', opacity: 0.85, color: p.contrastTextColor }}>
+        <p style={{ margin: 0, fontWeight: 700, color: p.text }}>No data yet</p>
+        <p style={{ margin: '0.5rem 0 0', fontSize: '0.9rem', opacity: 0.85, color: p.text }}>
           No students have completed any questions yet.
         </p>
       </div>
@@ -188,7 +190,7 @@ export default function AssistUsagePage() {
 
   const detailsSummary: React.CSSProperties = {
     fontSize: '0.8rem',
-    color: p.contrastTextColor,
+    color: p.text,
     opacity: 0.75,
     cursor: 'pointer',
     marginTop: '0.75rem',
@@ -198,11 +200,11 @@ export default function AssistUsagePage() {
     <div>
       {/* ── Class-wide: most common interaction types ──────────────────── */}
       <div style={card}>
-        <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.contrastTextColor }}>
+        <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.text }}>
           Most Common Interactions (Class-wide)
         </h2>
         {classInteractionCounts.length === 0 ? (
-          <p style={{ margin: 0, fontSize: '0.9rem', color: p.contrastTextColor, opacity: 0.85 }}>
+          <p style={{ margin: 0, fontSize: '0.9rem', color: p.text, opacity: 0.85 }}>
             No assist interactions recorded yet.
           </p>
         ) : (
@@ -217,7 +219,7 @@ export default function AssistUsagePage() {
               <summary style={detailsSummary}>View as table</summary>
               <ul style={{ ...rowList, marginTop: '0.5rem' }}>
                 {classInteractionCounts.map((ic) => (
-                  <li key={ic.interaction} style={row(p.contrastTextColor)}>
+                  <li key={ic.interaction} style={row(p.text)}>
                     <span>{ic.interaction}</span>
                     <span>{ic.count}</span>
                   </li>
@@ -230,7 +232,7 @@ export default function AssistUsagePage() {
 
       {/* ── Per-student: tier breakdown + interaction tally ─────────────── */}
       <div style={card}>
-        <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.contrastTextColor }}>
+        <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.text }}>
           Select a Student
         </h2>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
@@ -244,21 +246,21 @@ export default function AssistUsagePage() {
 
       {selectedUserId === null ? (
         <div style={{ ...card, textAlign: 'center' }}>
-          <p style={{ margin: 0, fontSize: '0.9rem', color: p.contrastTextColor, opacity: 0.85 }}>
+          <p style={{ margin: 0, fontSize: '0.9rem', color: p.text, opacity: 0.85 }}>
             Select a student above to view their assist-tier breakdown and interaction usage.
           </p>
         </div>
       ) : (
         <>
           <div style={card}>
-            <p style={{ margin: 0, fontSize: '0.95rem', color: p.contrastTextColor }}>
+            <p style={{ margin: 0, fontSize: '0.95rem', color: p.text }}>
               <strong>{selectedUserId}</strong> &middot; <strong>{selectedUsage?.totalQuestions ?? 0}</strong> question
               attempt{(selectedUsage?.totalQuestions ?? 0) === 1 ? '' : 's'} logged
             </p>
           </div>
 
           <div style={card}>
-            <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.contrastTextColor }}>
+            <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.text }}>
               Assist-Tier Breakdown
             </h2>
             <SkillBarChart
@@ -271,12 +273,12 @@ export default function AssistUsagePage() {
               <summary style={detailsSummary}>View as table</summary>
               <ul style={{ ...rowList, marginTop: '0.5rem' }}>
                 {TIER_LABELS.map(({ key, label }) => (
-                  <li key={key} style={row(p.contrastTextColor)}>
+                  <li key={key} style={row(p.text)}>
                     <span>{label}</span>
                     <span>{selectedUsage?.tierCounts[key] ?? 0}</span>
                   </li>
                 ))}
-                <li style={row(p.contrastTextColor)}>
+                <li style={row(p.text)}>
                   <span>No assist used</span>
                   <span>{selectedUsage?.noAssistCount ?? 0}</span>
                 </li>
@@ -285,11 +287,11 @@ export default function AssistUsagePage() {
           </div>
 
           <div style={card}>
-            <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.contrastTextColor }}>
+            <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.text }}>
               Interaction Types Used
             </h2>
             {selectedInteractionCounts.length === 0 ? (
-              <p style={{ margin: 0, fontSize: '0.9rem', color: p.contrastTextColor, opacity: 0.85 }}>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: p.text, opacity: 0.85 }}>
                 No assist interactions recorded for this student.
               </p>
             ) : (
@@ -304,7 +306,7 @@ export default function AssistUsagePage() {
                   <summary style={detailsSummary}>View as table</summary>
                   <ul style={{ ...rowList, marginTop: '0.5rem' }}>
                     {selectedInteractionCounts.map((ic) => (
-                      <li key={ic.interaction} style={row(p.contrastTextColor)}>
+                      <li key={ic.interaction} style={row(p.text)}>
                         <span>{ic.interaction}</span>
                         <span>{ic.count}</span>
                       </li>

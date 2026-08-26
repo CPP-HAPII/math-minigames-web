@@ -5,16 +5,18 @@
  * no auth/role gating (there is no role concept anywhere in this app yet;
  * that's a separate later stage), no data fetching.
  *
- * Styling matches the rest of the app (inline style objects driven by the
- * active ColorProfile, hydration guard for the Zustand-persisted theme) —
- * no new UI library or styling system introduced.
+ * Styling uses the teacher-portal's own DashboardTheme (lib/teacherDashboardThemes.ts),
+ * not the kid-facing play-screen ColorProfile — kept separate on purpose so
+ * this dashboard never shifts color just because a kid picked a different
+ * theme on the play screen. No new UI library or styling system introduced.
  */
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useThemeStore, selectActiveProfile } from '@/lib/stores/themeStore';
-import { themes } from '@/lib/themes';
+import { useTeacherDashboardThemeStore, selectActiveDashboardTheme } from '@/lib/stores/teacherDashboardThemeStore';
+import { useHydrated } from '@/lib/hooks/useHydrated';
+import { teacherDashboardThemes } from '@/lib/teacherDashboardThemes';
+import TeacherThemeSwitcher from '@/components/teacher/TeacherThemeSwitcher';
 
 const NAV_SECTIONS = [
   { href: '/teacher-portal/overview', label: 'Class Overview' },
@@ -23,19 +25,19 @@ const NAV_SECTIONS = [
 ] as const;
 
 export default function TeacherPortalLayout({ children }: { children: React.ReactNode }) {
-  const profile = useThemeStore(selectActiveProfile);
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => setHydrated(true), []);
-  const p = hydrated ? profile : themes[0];
+  const profile = useTeacherDashboardThemeStore(selectActiveDashboardTheme);
+  const hydrated = useHydrated();
+  const t = hydrated ? profile : teacherDashboardThemes[0];
 
   const pathname = usePathname();
 
   return (
-    <main style={{ backgroundColor: p.backgroundColor, minHeight: '100vh', color: p.textColor }}>
+    <main style={{ backgroundColor: t.pageBackground, minHeight: '100vh', color: t.text, fontWeight: 700 }}>
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <header
         style={{
-          backgroundColor: p.headerColor,
+          background: t.headerBackground,
+          borderBottom: `1px solid ${t.cardBorder}`,
           padding: '0.85rem 1.5rem',
           display: 'flex',
           justifyContent: 'space-between',
@@ -44,15 +46,13 @@ export default function TeacherPortalLayout({ children }: { children: React.Reac
           gap: '0.75rem',
         }}
       >
-        <h1 style={{ fontSize: '1.35rem', fontWeight: 700, color: p.contrastTextColor, margin: 0 }}>
-          Teacher Dashboard
-        </h1>
-        <Link
-          href="/home"
-          style={{ fontSize: '0.85rem', color: p.contrastTextColor, opacity: 0.8, textDecoration: 'none' }}
-        >
-          ← Back to app
-        </Link>
+        <h1 style={{ fontSize: '1.35rem', fontWeight: 700, color: t.text, margin: 0 }}>Teacher Dashboard</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
+          <TeacherThemeSwitcher />
+          <Link href="/home" style={{ fontSize: '0.85rem', color: t.text, opacity: 0.8, textDecoration: 'none' }}>
+            ← Back to app
+          </Link>
+        </div>
       </header>
 
       {/* ── Section nav ────────────────────────────────────────────────── */}
@@ -71,12 +71,12 @@ export default function TeacherPortalLayout({ children }: { children: React.Reac
               key={href}
               href={href}
               style={{
-                backgroundColor: active ? p.buttonColor : p.headerColor,
-                color: p.textColor,
-                border: `1.5px solid ${p.textColor}22`,
+                backgroundColor: active ? t.accent : t.navInactiveBackground,
+                color: active ? t.accentText : t.text,
+                border: `1.5px solid ${active ? 'transparent' : t.navBorder}`,
                 borderRadius: '0.5rem',
                 padding: '0.5rem 1.1rem',
-                fontWeight: active ? 700 : 400,
+                fontWeight: 700,
                 fontSize: '0.95rem',
                 textDecoration: 'none',
               }}
