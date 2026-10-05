@@ -9,7 +9,7 @@ import { useHydrated } from '@/lib/hooks/useHydrated';
 import { themes } from '@/lib/themes';
 import { useGameDataStore } from '@/lib/stores/gameDataStore';
 import { fetchStudentQuestionRows, type QuestionAttemptRow } from '@/lib/services/analyticsDataService';
-import { computeContinueTarget, computeSublevelProgress } from '@/lib/services/progressService';
+import { computeLockedContinueTarget, computeSublevelLockInfo } from '@/lib/services/progressService';
 import { LEVEL_MAP, SUBLEVEL_MAP } from '@/lib/levelMap';
 import ContinueBanner from '@/components/home/ContinueBanner';
 import LevelGrid, { type LevelCardData } from '@/components/home/LevelGrid';
@@ -77,26 +77,33 @@ export default function HomePage() {
 
   // ── Progress + Continue target ──────────────────────────────────────────────
   const progressReady = isLoaded && rowsLoaded;
-  const sublevelProgress = useMemo(
-    () => (progressReady ? computeSublevelProgress(rows, bank) : []),
-    [progressReady, rows, bank],
-  );
+  const sublevelLockInfo = useMemo(
+  () => (progressReady ? computeSublevelLockInfo(rows, bank) : []),
+  [progressReady, rows, bank],
+);
   const continueTarget = useMemo(
-    () => (progressReady ? computeContinueTarget(rows, bank) : null),
+    () => (progressReady ? computeLockedContinueTarget(rows, bank) : null),
     [progressReady, rows, bank],
   );
 
-  const levelCards: LevelCardData[] = useMemo(
-    () =>
-      LEVEL_NUMBERS.map((levelNum) => ({
-        level: levelNum,
-        name: LEVEL_MAP[levelNum] ?? '',
-        sublevels: sublevelProgress
-          .filter((s) => s.level === levelNum)
-          .map((s) => ({ key: s.sublevel, name: SUBLEVEL_MAP[s.sublevel] ?? '', status: s.status })),
-      })),
-    [sublevelProgress],
-  );
+const levelCards: LevelCardData[] = useMemo(
+  () =>
+    LEVEL_NUMBERS.map((levelNum) => ({
+      level: levelNum,
+      name: LEVEL_MAP[levelNum] ?? '',
+      sublevels: sublevelLockInfo
+        .filter((s) => s.level === levelNum)
+        .map((s) => ({
+          key: s.sublevel,
+          name: SUBLEVEL_MAP[s.sublevel] ?? '',
+          status: s.status,
+          unlocked: s.unlocked,
+          passed: s.passed,
+          bestScorePercent: s.bestScorePercent,
+        })),
+    })),
+  [sublevelLockInfo],
+);
 
   const router = useRouter();
 
@@ -105,8 +112,12 @@ export default function HomePage() {
   }
 
   function handleSublevelClick(clickedLevel: number, clickedSublevel: string) {
+    const target = sublevelLockInfo.find((s) => s.level === clickedLevel && s.sublevel === clickedSublevel);
+    // Defense in depth — LevelGrid already disables the button when locked, but
+    // a stray click event or future caller shouldn't be able to bypass the lock.
+    if (target && !target.unlocked) return;
     goToPlay(clickedLevel, clickedSublevel);
-  }
+}
 
   function handlePlay() {
     if (continueTarget && continueTarget.level !== null && continueTarget.sublevel !== null) {

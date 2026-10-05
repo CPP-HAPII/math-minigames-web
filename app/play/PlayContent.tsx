@@ -75,6 +75,7 @@ export default function PlayContent() {
   const correctedAfterMistakeCount = useSessionStore((s) => s.correctedAfterMistakeCount);
   const progress = useSessionStore((s) => s.progress);
   const questionLogs = useSessionStore((s) => s.questionLogs);
+  const originalQuestionCount = useSessionStore((s) => s.originalQuestionCount);
   const highScore = useSessionStore((s) => s.highScore);
   const startSession = useSessionStore((s) => s.startSession);
   const submitAnswer = useSessionStore((s) => s.submitAnswer);
@@ -86,6 +87,7 @@ export default function PlayContent() {
   const completedRef = useRef(false);
   const preSeriesHighScoreRef = useRef(highScore);
   const [attemptId, setAttemptId] = useState<string | null>(null);
+  const [retryIntroDismissed, setRetryIntroDismissed] = useState(false);
 
   useEffect(() => {
     if (!isLoaded || !sublevel) return;
@@ -100,6 +102,7 @@ export default function PlayContent() {
     // analytics continuity even though there's no difficulty selector anymore.
     const seriesDifficulty: Difficulty = selected[0]?.difficulty ?? 'random';
     startSession(selected, seriesDifficulty);
+    setRetryIntroDismissed(false);
 
     // Creates the Firestore attempt doc immediately, not just at series end —
     // see quizAttemptService.startQuizAttempt for why. Fresh mount per
@@ -115,14 +118,25 @@ export default function PlayContent() {
   }, [isLoaded, sublevel, bank, startSession, highScore, userId]);
 
   const currentQuestion: AnyGameData | undefined = questions[currentIndex];
-  const seriesComplete = isLoaded && questions.length > 0 && currentIndex >= questions.length;
+  // `questions` grows when a wrong question is queued for another pass. The
+  // series is complete only when the active queue has been fully consumed;
+  // `originalQuestionCount` is used for user-facing totals because the queue
+  // can contain retries.
+  const seriesComplete = isLoaded && originalQuestionCount > 0 && currentIndex >= questions.length;
+  const initialIncorrectCount = Math.max(0, originalQuestionCount - correctCount);
+  const showRetryIntro =
+    !seriesComplete &&
+    originalQuestionCount > 0 &&
+    currentIndex >= originalQuestionCount &&
+    initialIncorrectCount > 0 &&
+    !retryIntroDismissed;
 
   // Per-question timer, tracked at the series level so onComplete(wasCorrect)
   // in the game components stays untouched — it never needs to report timing.
   const questionStartRef = useRef<number>(0);
   useEffect(() => {
     questionStartRef.current = Date.now();
-  }, [currentQuestion?.id]);
+  }, [currentQuestion?.id, currentIndex]);
 
   const [isNewHighScore, setIsNewHighScore] = useState(false);
 
@@ -186,6 +200,11 @@ export default function PlayContent() {
   }, []);
 
   function handleAnswered(question: AnyGameData, wasCorrect: boolean) {
+    // A game can emit a completion callback from more than one browser event
+    // (or a delayed callback can race with a second click). Only one advance
+    // may be pending for the currently displayed question.
+    if (pendingAdvanceRef.current !== null) return;
+
     const elapsedSeconds = Math.floor((Date.now() - questionStartRef.current) / 1000);
     // onComplete and the currentIndex advance used to land in the same React
     // commit, so the game component's own "✓ Correct!" feedback never actually
@@ -206,27 +225,27 @@ export default function PlayContent() {
     switch (currentQuestion.gameType) {
       case 'jumble':
         gameElement = (
-          <JumbleGame key={currentQuestion.id} question={currentQuestion} assistLevel={assistLevel} onComplete={onComplete} />
+          <JumbleGame key={`${currentQuestion.id}-${currentIndex}`} question={currentQuestion} assistLevel={assistLevel} onComplete={onComplete} />
         );
         break;
       case 'typing':
         gameElement = (
-          <TypingGame key={currentQuestion.id} question={currentQuestion} assistLevel={assistLevel} onComplete={onComplete} />
+          <TypingGame key={`${currentQuestion.id}-${currentIndex}`} question={currentQuestion} assistLevel={assistLevel} onComplete={onComplete} />
         );
         break;
       case 'fill':
         gameElement = (
-          <FillBlanksGame key={currentQuestion.id} question={currentQuestion} assistLevel={assistLevel} onComplete={onComplete} />
+          <FillBlanksGame key={`${currentQuestion.id}-${currentIndex}`} question={currentQuestion} assistLevel={assistLevel} onComplete={onComplete} />
         );
         break;
       case 'playback':
         gameElement = (
-          <PlaybackGame key={currentQuestion.id} question={currentQuestion} assistLevel={assistLevel} onComplete={onComplete} />
+          <PlaybackGame key={`${currentQuestion.id}-${currentIndex}`} question={currentQuestion} assistLevel={assistLevel} onComplete={onComplete} />
         );
         break;
       case 'reading':
         gameElement = (
-          <ReadAloudGame key={currentQuestion.id} question={currentQuestion} assistLevel={assistLevel} onComplete={onComplete} />
+          <ReadAloudGame key={`${currentQuestion.id}-${currentIndex}`} question={currentQuestion} assistLevel={assistLevel} onComplete={onComplete} />
         );
         break;
       default:
@@ -236,7 +255,10 @@ export default function PlayContent() {
   }
 
   function handlePlayAgain() {
-    if (pendingAdvanceRef.current !== null) clearTimeout(pendingAdvanceRef.current);
+    if (pendingAdvanceRef.current !== null) {
+      clearTimeout(pendingAdvanceRef.current);
+      pendingAdvanceRef.current = null;
+    }
     resetSession();
     startedKeyRef.current = null;
     router.push('/home');
@@ -295,6 +317,87 @@ export default function PlayContent() {
     );
   }
 
+  // ── Initial-round summary before retries ───────────────────────────────────
+  if (showRetryIntro) {
+    return (
+      <main
+        style={{
+          minHeight: '100vh',
+          background: p.homePageBackground,
+          color: p.homeInk,
+          fontFamily: 'var(--font-nunito), sans-serif',
+          padding: '2rem 1rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <div style={{ ...panelCard, textAlign: 'center', maxWidth: '620px' }}>
+          <h1
+            style={{
+              fontFamily: 'var(--font-baloo-2), sans-serif',
+              fontSize: '1.8rem',
+              fontWeight: 700,
+              margin: '0 0 0.75rem',
+              color: p.homeInk,
+            }}
+          >
+            Initial Round Complete!
+          </h1>
+          <p style={{ fontSize: '1.05rem', margin: '0 0 1.25rem' }}>
+            Here&rsquo;s how you did on the first pass:
+          </p>
+
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div
+              style={{
+                flex: 1,
+                maxWidth: '190px',
+                borderRadius: '14px',
+                padding: '1rem',
+                background: `${p.checkAnswerButtonColor}18`,
+                border: `1px solid ${p.checkAnswerButtonColor}55`,
+              }}
+            >
+              <div style={{ fontSize: '2rem', fontWeight: 800, color: p.checkAnswerButtonColor }}>{correctCount}</div>
+              <div style={{ fontWeight: 700 }}>Correct</div>
+            </div>
+            <div
+              style={{
+                flex: 1,
+                maxWidth: '190px',
+                borderRadius: '14px',
+                padding: '1rem',
+                background: `${p.clearAnswerButtonColor}18`,
+                border: `1px solid ${p.clearAnswerButtonColor}55`,
+              }}
+            >
+              <div style={{ fontSize: '2rem', fontWeight: 800, color: p.clearAnswerButtonColor }}>{initialIncorrectCount}</div>
+              <div style={{ fontWeight: 700 }}>Incorrect</div>
+            </div>
+          </div>
+
+          <h2
+            style={{
+              fontFamily: 'var(--font-baloo-2), sans-serif',
+              fontSize: '1.35rem',
+              margin: '0 0 0.5rem',
+              color: p.homeInk,
+            }}
+          >
+            Re-attempting incorrect questions
+          </h2>
+          <p style={{ fontSize: '1rem', lineHeight: 1.5, margin: '0 auto 1.25rem', maxWidth: '500px' }}>
+            The questions you missed will return now. Keep working through them until each one is answered correctly.
+          </p>
+          <button onClick={() => setRetryIntroDismissed(true)} style={{ ...actionButton, marginTop: 0 }}>
+            Re-attempt incorrect questions
+          </button>
+        </div>
+      </main>
+    );
+  }
+
   // ── Results screen ──────────────────────────────────────────────────────────
   if (seriesComplete) {
     return (
@@ -317,7 +420,7 @@ export default function PlayContent() {
           )}
           <p style={{ fontSize: '1rem', margin: '0.35rem 0' }}>High Score: {highScore}</p>
           <p style={{ fontSize: '1rem', margin: '0.35rem 0' }}>
-            Correct on first try: {correctCount} / {questions.length}
+            Correct on first try: {correctCount} / {originalQuestionCount}
           </p>
           <p style={{ fontSize: '1rem', margin: '0.35rem 0' }}>
             Corrected after a mistake: {correctedAfterMistakeCount}
@@ -356,7 +459,10 @@ export default function PlayContent() {
             </p>
             <ol style={{ margin: 0, paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {questionLogs.map((log, i) => {
-                const q = questions[i];
+                // Retry entries are appended to `questions`, so the log index
+                // no longer corresponds to the queue index. Resolve prompts
+                // by their stable question ID instead.
+                const q = questions.find((candidate) => candidate.id === log.questionId);
                 // Playback has no displayedProblem (the question is heard, not shown) — fall back
                 // to its audioTranscript so the breakdown still reads as the actual question.
                 const promptText =
@@ -409,6 +515,7 @@ export default function PlayContent() {
     background: p.homeThemeButtonInactiveBackground,
     color: p.homeThemeButtonInactiveColor,
   };
+  const retrying = currentIndex >= originalQuestionCount;
 
   return (
     <main style={{ minHeight: '100vh', background: p.homePageBackground, color: p.textColor }}>
@@ -439,6 +546,7 @@ export default function PlayContent() {
         </span>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
           <span style={headerPill}>Question {currentIndex + 1} / {questions.length}</span>
+          {retrying && <span style={headerPill}>Retrying missed questions</span>}
           <span style={headerPill}>Score: {score}</span>
           <Calculator profile={p} />
         </div>

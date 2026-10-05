@@ -43,6 +43,7 @@ export default function TypingGame({ question, assistLevel, onComplete }: Typing
   const [result, setResult] = useState<CheckResult | null>(null);
 
   const solved = result === 'correct';
+  const locked = solved || result === 'wrong';
 
   // Theme — guard hydration so SSR uses the default profile (matches other pages).
   const profile = useThemeStore(selectActiveProfile);
@@ -51,7 +52,7 @@ export default function TypingGame({ question, assistLevel, onComplete }: Typing
   const p = hydrated ? profile : themes[0];
 
   function handleChange(value: string) {
-    if (solved) return;
+    if (locked) return;
     setTyped(value);
     setResult(null); // clear stale feedback as the answer changes
   }
@@ -65,6 +66,7 @@ export default function TypingGame({ question, assistLevel, onComplete }: Typing
       onComplete(base.wasCleanCorrect());
     } else {
       base.markMistake();
+      onComplete(false);
     }
   }
 
@@ -90,7 +92,7 @@ export default function TypingGame({ question, assistLevel, onComplete }: Typing
     opacity: disabled ? 0.5 : 1,
   });
 
-  const checkDisabled = typed.trim().length === 0 || solved;
+  const checkDisabled = typed.trim().length === 0 || locked;
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
@@ -143,7 +145,7 @@ export default function TypingGame({ question, assistLevel, onComplete }: Typing
           id="typing-answer"
           value={typed}
           onChange={(e) => handleChange(e.target.value)}
-          disabled={solved}
+          disabled={locked}
           rows={3}
           placeholder="Type your answer…"
           style={{
@@ -157,7 +159,7 @@ export default function TypingGame({ question, assistLevel, onComplete }: Typing
             backgroundColor: p.backgroundColor,
             color: p.textColor,
             resize: 'vertical',
-            opacity: solved ? 0.6 : 1,
+            opacity: locked ? 0.6 : 1,
           }}
         />
       </div>

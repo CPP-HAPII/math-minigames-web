@@ -39,6 +39,118 @@ function resolveAudioSrc(webAudioLink: string): string {
   return PLACEHOLDER_AUDIO_FILENAMES.has(filename) ? '' : webAudioLink;
 }
 
+/** Appends an alpha channel to a 6-digit hex color — see JumbleGame.tsx for the same helper.
+ * TODO: worth lifting to a shared lib/colorUtils.ts now that a second game type needs it. */
+function withAlpha(hex: string, alpha: number): string {
+  const a = Math.round(alpha * 255).toString(16).padStart(2, '0');
+  return `${hex}${a}`;
+}
+
+// ── Inline icons (no icon package) ──────────────────────────────────────────
+// TODO: identical set (minus SpeakerIcon/WaveIcon/PlayCircleIcon/PauseIcon/StopIcon
+// below) already exists in JumbleGame.tsx — worth extracting both files' icons to a
+// shared components/games/icons.tsx once a third game type needs the same treatment.
+const iconProps = { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none' } as const;
+
+function InfoIcon() {
+  return (
+    <svg {...iconProps} width={20} height={20} stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+      <circle cx="12" cy="12" r="9" />
+      <line x1="12" y1="11" x2="12" y2="16" />
+      <line x1="12" y1="7.5" x2="12" y2="7.5" />
+    </svg>
+  );
+}
+
+function SpeakerIcon() {
+  return (
+    <svg {...iconProps} width={18} height={18} fill="currentColor">
+      <path d="M4 9v6h4l5 4V5L8 9H4Z" />
+      <path d="M16.5 8.5a5 5 0 0 1 0 7" stroke="currentColor" strokeWidth={2} strokeLinecap="round" fill="none" />
+    </svg>
+  );
+}
+
+function WaveIcon() {
+  return (
+    <svg {...iconProps} width={22} height={18} stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+      <line x1="4" y1="7" x2="4" y2="17" />
+      <line x1="9" y1="3" x2="9" y2="21" />
+      <line x1="14" y1="8" x2="14" y2="16" />
+      <line x1="19" y1="5" x2="19" y2="19" />
+    </svg>
+  );
+}
+
+function PlayCircleIcon() {
+  return (
+    <svg {...iconProps} width={18} height={18} fill="currentColor">
+      <path d="M8 5.5v13l11-6.5-11-6.5Z" />
+    </svg>
+  );
+}
+
+function PauseIcon() {
+  return (
+    <svg {...iconProps} width={16} height={16} fill="currentColor">
+      <rect x="6" y="5" width="4" height="14" rx="1" />
+      <rect x="14" y="5" width="4" height="14" rx="1" />
+    </svg>
+  );
+}
+
+function StopIcon() {
+  return (
+    <svg {...iconProps} width={14} height={14} fill="currentColor">
+      <rect x="5" y="5" width="14" height="14" rx="2" />
+    </svg>
+  );
+}
+
+function ArrowDownIcon() {
+  return (
+    <svg {...iconProps} stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 5v13" />
+      <path d="M6 13l6 6 6-6" />
+    </svg>
+  );
+}
+
+function RefreshIcon() {
+  return (
+    <svg {...iconProps} stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 11a8 8 0 1 0-2.3 5.6" />
+      <path d="M20 5v6h-6" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg {...iconProps} stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 13l4 4L19 7" />
+    </svg>
+  );
+}
+
+function GlobeIcon() {
+  return (
+    <svg {...iconProps} width={18} height={18} stroke="currentColor" strokeWidth={1.8} strokeLinecap="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18Z" />
+    </svg>
+  );
+}
+
+function PlayIcon() {
+  return (
+    <svg {...iconProps} width={14} height={14} fill="currentColor">
+      <path d="M8 5.5v13l11-6.5-11-6.5Z" />
+    </svg>
+  );
+}
+
 export default function PlaybackGame({ question, assistLevel, onComplete }: PlaybackGameProps) {
   // getMinSelection() = multiAcceptedAnswers[0].length — the max tokens selectable.
   const maxSelection = question.multiAcceptedAnswers[0]?.length ?? 0;
@@ -50,6 +162,7 @@ export default function PlaybackGame({ question, assistLevel, onComplete }: Play
   const [result, setResult] = useState<OrderedSelectionResult | null>(null);
 
   const solved = result === 'correct';
+  const locked = solved || result === "wrong";
 
   const audioSrc = resolveAudioSrc(question.webAudioLink);
   const { status: playbackStatus, mode: playbackMode, play, pause, stop } = useAudioPlayback(
@@ -64,9 +177,10 @@ export default function PlaybackGame({ question, assistLevel, onComplete }: Play
   const p = hydrated ? profile : themes[0];
 
   const selectedTokens = selectedIndices.map((i) => question.optionList[i]);
+  const showAssist = assistLevel !== 'advanced';
 
   function handleSelect(i: number) {
-    if (solved) return;
+    if (locked) return;
     setSelectedIndices((prev) => {
       if (prev.includes(i)) return prev; // each button used once
       if (prev.length >= maxSelection) return prev; // cap at maxSelection
@@ -76,7 +190,7 @@ export default function PlaybackGame({ question, assistLevel, onComplete }: Play
   }
 
   function handleClear() {
-    if (solved) return;
+    if (locked) return;
     setSelectedIndices([]);
     setResult(null);
   }
@@ -94,51 +208,75 @@ export default function PlaybackGame({ question, assistLevel, onComplete }: Play
       onComplete(base.wasCleanCorrect());
     } else if (outcome === 'wrong') {
       base.markMistake();
+      onComplete(false);
     }
     // 'incomplete' → just show the "select more answers" prompt.
   }
 
-  // ── Styles (shared look with JumbleGame) ────────────────────────────────────
-  const card: React.CSSProperties = {
+  // ── Styles, mapped onto the active ColorProfile (same convention as JumbleGame) ──
+  const bigCard: React.CSSProperties = {
     background: p.homeAccentGradient,
-    borderRadius: '1rem',
+    color: p.contrastTextColor,
+    borderRadius: '0.75rem',
     padding: '1.25rem 1.5rem',
-    margin: '0.75rem auto',
-    maxWidth: '760px',
-    width: '100%',
   };
 
-  const wordButton = (disabled: boolean): React.CSSProperties => ({
+  const smallCard: React.CSSProperties = {
+    background: p.cardBackground,
+    color: p.cardTextColor,
+    borderRadius: '0.75rem',
+    padding: '1.25rem',
+  };
+
+  const sectionLabel: React.CSSProperties = {
+    textTransform: 'uppercase',
+    fontSize: '0.7rem',
+    fontWeight: 700,
+    letterSpacing: '0.06em',
+    color: withAlpha(p.textColor, 0.65),
+    margin: '0 0 0.6rem',
+  };
+
+  const blockButton = (disabled: boolean): React.CSSProperties => ({
     background: disabled ? p.disabledButtonColor : p.cardBackground,
     color: p.cardTextColor,
     border: 'none',
-    borderRadius: '0.5rem',
+    borderRadius: '0.6rem',
     padding: '0.6rem 1.1rem',
-    fontSize: '1rem',
+    fontSize: '0.95rem',
     fontWeight: 700,
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.5 : 1,
   });
 
   const actionButton = (bg: string, disabled: boolean): React.CSSProperties => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.4rem',
     backgroundColor: bg,
     color: p.contrastTextColor,
     border: 'none',
     borderRadius: '0.6rem',
-    padding: '0.65rem 1.4rem',
-    fontSize: '1rem',
+    padding: '0.7rem 1.3rem',
+    fontSize: '0.95rem',
     fontWeight: 700,
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.5 : 1,
   });
 
-  const audioButton = (bg: string, disabled: boolean): React.CSSProperties => ({
-    backgroundColor: disabled ? p.disabledButtonColor : bg,
-    color: p.contrastTextColor,
-    border: 'none',
+  // Audio buttons are visually secondary to Check/Clear (this is a "listen
+  // first" task) — outline style on the same surface, rather than three
+  // more solid action-colored buttons competing with Check Answer below.
+  const audioButton = (active: boolean, disabled: boolean): React.CSSProperties => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.4rem',
+    backgroundColor: active ? p.cardBackground : 'transparent',
+    color: active ? p.cardTextColor : p.contrastTextColor,
+    border: `1px solid ${withAlpha(p.contrastTextColor, active ? 0 : 0.5)}`,
     borderRadius: '0.6rem',
-    padding: '0.55rem 1.2rem',
-    fontSize: '0.95rem',
+    padding: disabled ? '0.65rem 1.3rem' : active ? '0.85rem 1.6rem' : '0.65rem 1.3rem',
+    fontSize: active ? '1.05rem' : '0.95rem',
     fontWeight: 700,
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.5 : 1,
@@ -157,124 +295,165 @@ export default function PlaybackGame({ question, assistLevel, onComplete }: Play
     }
   })();
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  const actionsDisabled = selectedIndices.length === 0 || locked;
+
+  // ── Render ──────────────────────────────────────────────────────────────
   return (
-    <section
-      style={{
-        background: p.homePageBackground,
-        color: p.textColor,
-        padding: '1.5rem 1rem 3rem',
-        minHeight: '100%',
-      }}
-    >
-      {/* Written prompt — the instruction (Dart: titleQuestion). */}
-      <div style={{ ...card, textAlign: 'center' }}>
-        <p style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0, color: p.contrastTextColor }}>
-          {question.writtenPrompt}
-        </p>
-      </div>
-
-      {/*
-        Audio controls — the question is delivered by audio, not shown as text
-        upfront (this is a listening-comprehension exercise). `question.audioTranscript`
-        is intentionally never rendered as visible text here; it's only ever spoken.
-        The language-assist UI (translation, hover glossary) wraps this in
-        Stages 12–14; `assistLevel` will drive that wrapper.
-      */}
-      <div style={{ ...card, textAlign: 'center' }} data-assist-level={assistLevel} data-playback-mode={playbackMode}>
-        <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <button onClick={play} disabled={playbackStatus === 'playing'} style={audioButton(p.checkAnswerButtonColor, playbackStatus === 'playing')}>
-            ▶ Hear Question
-          </button>
-          <button onClick={pause} disabled={playbackStatus !== 'playing'} style={audioButton(p.buttonColor, playbackStatus !== 'playing')}>
-            ❚❚ Pause
-          </button>
-          <button
-            onClick={stop}
-            disabled={playbackStatus !== 'playing' && playbackStatus !== 'paused'}
-            style={audioButton(p.clearAnswerButtonColor, playbackStatus !== 'playing' && playbackStatus !== 'paused')}
-          >
-            ■ Stop
-          </button>
-        </div>
-        {playbackStatusText && (
-          <p style={{ margin: '0.6rem 0 0', fontSize: '0.9rem', fontWeight: 700, color: p.contrastTextColor, opacity: 0.85 }}>{playbackStatusText}</p>
-        )}
-        {assistLevel !== 'advanced' && (
-          <TranslateButton
-            sourceText={question.audioTranscript}
-            profile={p}
-            autoTranslate={assistLevel === 'novice'}
-          />
-        )}
-      </div>
-
-      {/* Your answer — selected tokens in order. */}
-      <div style={{ ...card, textAlign: 'center' }}>
-        <p style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.contrastTextColor }}>
-          Your answer
-        </p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center', minHeight: '1.5rem' }}>
-          {selectedTokens.map((token, i) => (
-            <span key={i} style={{ fontSize: '1.15rem', fontWeight: 700, color: p.contrastTextColor }}>
-              {token}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Word-button palette. */}
+    <section style={{ background: p.backgroundColor, padding: '1.5rem 1rem 3rem', minHeight: '100%' }}>
       <div
         style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '0.65rem',
-          justifyContent: 'center',
-          maxWidth: '760px',
-          margin: '1rem auto',
+          maxWidth: '1120px',
+          margin: '0 auto',
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 1fr) 300px',
+          gap: '1.5rem',
+          alignItems: 'start',
         }}
       >
-        {question.optionList.map((option, i) => {
-          const disabled = solved || selectedIndices.includes(i);
-          return (
-            <button
-              key={i}
-              onClick={() => handleSelect(i)}
-              disabled={disabled}
-              style={wordButton(disabled)}
-            >
-              {option}
+        {/* ── Main column ─────────────────────────────────────────────── */}
+        <main style={{ display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 }}>
+          {/* Instruction banner — the written prompt (Dart: titleQuestion). */}
+          <div style={{ ...bigCard, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <InfoIcon />
+            <p style={{ margin: 0, fontWeight: 700, fontSize: '1rem' }}>{question.writtenPrompt}</p>
+          </div>
+
+          {/*
+            Listening task — the question is delivered by audio, not shown as text
+            upfront. `question.audioTranscript` is intentionally never rendered as
+            visible text here; it's only ever spoken or, when assist is on, shown
+            translated in the sidebar.
+          */}
+          <div style={bigCard} data-assist-level={assistLevel} data-playback-mode={playbackMode}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.9rem', opacity: 0.85 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <SpeakerIcon />
+                <span style={{ textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.06em' }}>
+                  Listening Task
+                </span>
+              </div>
+              <WaveIcon />
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button onClick={play} disabled={playbackStatus === 'playing'} style={audioButton(true, playbackStatus === 'playing')}>
+                <PlayCircleIcon /> Hear Question
+              </button>
+              <button onClick={pause} disabled={playbackStatus !== 'playing'} style={audioButton(false, playbackStatus !== 'playing')}>
+                <PauseIcon /> Pause
+              </button>
+              <button
+                onClick={stop}
+                disabled={playbackStatus !== 'playing' && playbackStatus !== 'paused'}
+                style={audioButton(false, playbackStatus !== 'playing' && playbackStatus !== 'paused')}
+              >
+                <StopIcon /> Stop
+              </button>
+            </div>
+
+            {playbackStatusText && (
+              <p style={{ margin: '0.75rem 0 0', fontSize: '0.9rem', fontWeight: 700, textAlign: 'center', opacity: 0.85 }}>
+                {playbackStatusText}
+              </p>
+            )}
+
+            {showAssist && (
+              <p style={{ margin: '0.75rem 0 0', fontSize: '0.85rem', textAlign: 'center', opacity: 0.8 }}>
+                Need translation? See the Spanish assistant card on the right.
+              </p>
+            )}
+          </div>
+
+          {/* Your answer — selected tokens in order. */}
+          <div style={{ ...bigCard, border: `1px dashed ${withAlpha(p.contrastTextColor, 0.4)}`, textAlign: 'center' }}>
+            <p style={{ ...sectionLabel, color: withAlpha(p.contrastTextColor, 0.75) }}>Your answer</p>
+            {selectedTokens.length === 0 ? (
+              <p style={{ opacity: 0.75, margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                <ArrowDownIcon /> Tap or drag number words here to build your answer
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center' }}>
+                {selectedTokens.map((token, i) => (
+                  <span
+                    key={i}
+                    style={{ background: p.cardBackground, color: p.cardTextColor, fontWeight: 700, borderRadius: '0.5rem', padding: '0.4rem 0.9rem' }}
+                  >
+                    {token}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Available blocks. */}
+          <div>
+            <p style={sectionLabel}>Available blocks</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem' }}>
+              {question.optionList.map((option, i) => {
+                const disabled = locked || selectedIndices.includes(i);
+                return (
+                  <button key={i} onClick={() => handleSelect(i)} disabled={disabled} style={blockButton(disabled)}>
+                    {option}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Actions. */}
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button onClick={handleClear} disabled={actionsDisabled} style={actionButton(p.clearAnswerButtonColor, actionsDisabled)}>
+              <RefreshIcon /> Clear
             </button>
-          );
-        })}
-      </div>
+            <button onClick={handleCheck} disabled={actionsDisabled} style={actionButton(p.checkAnswerButtonColor, actionsDisabled)}>
+              <CheckIcon /> Check Answer
+            </button>
+          </div>
 
-      {/* Actions. */}
-      <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', marginTop: '0.5rem' }}>
-        <button
-          onClick={handleCheck}
-          disabled={selectedIndices.length === 0 || solved}
-          style={actionButton(p.checkAnswerButtonColor, selectedIndices.length === 0 || solved)}
-        >
-          Check Answer
-        </button>
-        <button
-          onClick={handleClear}
-          disabled={selectedIndices.length === 0 || solved}
-          style={actionButton(p.clearAnswerButtonColor, selectedIndices.length === 0 || solved)}
-        >
-          Clear
-        </button>
-      </div>
+          {/* Feedback. */}
+          <AnswerFeedback
+            outcome={result}
+            wasCleanCorrect={!base.hadMistake}
+            profile={p}
+            wrongMessage="Try again — that order isn’t quite right."
+            incompleteMessage="Please select more answers."
+          />
+        </main>
 
-      {/* Feedback. */}
-      <AnswerFeedback
-        outcome={result}
-        wasCleanCorrect={!base.hadMistake}
-        profile={p}
-        wrongMessage="Try again — that order isn’t quite right."
-        incompleteMessage="Please select more answers."
-      />
+        {/* ── Sidebar ──────────────────────────────────────────────────── */}
+        <aside style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {showAssist && (
+            <div style={smallCard}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.9rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <GlobeIcon />
+                  <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>Spanish Translation</span>
+                </div>
+                <PlayIcon />
+              </div>
+              <div style={{ background: p.headerColor, color: p.contrastTextColor, borderRadius: '0.6rem', padding: '0.9rem' }}>
+                <TranslateButton
+                  sourceText={question.audioTranscript}
+                  profile={p}
+                  autoTranslate={assistLevel === 'novice'}
+                />
+              </div>
+            </div>
+          )}
+
+          <div style={smallCard}>
+            <p style={{ fontWeight: 700, fontSize: '0.95rem', margin: '0 0 0.9rem' }}>Current Progress Info</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.6rem', opacity: 0.85 }}>
+              <span>Blocks Selected</span>
+              <span style={{ fontWeight: 700, opacity: 1 }}>{selectedIndices.length} / {maxSelection}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', opacity: 0.85 }}>
+              <span>Mistakes Made</span>
+              <span style={{ fontWeight: 700, opacity: 1 }}>{base.hadMistake ? 'Yes' : 'No'}</span>
+            </div>
+          </div>
+        </aside>
+      </div>
     </section>
   );
 }

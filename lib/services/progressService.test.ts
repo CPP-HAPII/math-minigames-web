@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { QuestionAttemptRow } from './analyticsDataService';
 import type { AnyGameData } from '@/lib/types';
-import { computeContinueTarget, computeSublevelProgress, getOrderedSublevels } from './progressService';
+import { computeContinueTarget, computeSublevelProgress, getOrderedSublevels, computeSublevelLockInfo, computeLockedContinueTarget } from './progressService';
 
 /** Builds a QuestionAttemptRow with sensible defaults, overridable per test. */
 function makeRow(overrides: Partial<QuestionAttemptRow> = {}): QuestionAttemptRow {
@@ -166,5 +166,89 @@ describe('computeContinueTarget', () => {
 
   it('empty question bank -> null target', () => {
     expect(computeContinueTarget([], [])).toEqual({ level: null, sublevel: null, reason: 'sequence_complete' });
+  });
+});
+
+function attemptRows(attemptId: string, results: Record<string, boolean>): QuestionAttemptRow[] {
+  return Object.entries(results).map(([questionId, result]) => makeRow({ attemptId, questionId, result }));
+}
+
+describe('computeSublevelLockInfo', () => {
+  it('unlocks only the first sublevel when nothing has been attempted', () => {
+    const info = computeSublevelLockInfo([], bank);
+    expect(info.map((s) => [s.sublevel, s.unlocked])).toEqual([['1.1', true], ['1.2', false], ['2.1', false]]);
+  });
+
+  it('a full attempt below 80% fails and keeps the next sublevel locked', () => {
+    const rows = attemptRows('a1', { '1.1-P1': true, '1.1-P2': true, '1.1-P3': false });
+    const info = computeSublevelLockInfo(rows, bank);
+    expect(info[0]).toMatchObject({ sublevel: '1.1', passed: false, unlocked: true, bestScorePercent: 67 });
+    expect(info[1].unlocked).toBe(false);
+  });
+
+  it('a full attempt at 100% passes and unlocks only the next sublevel', () => {
+    const rows = attemptRows('a1', { '1.1-P1': true, '1.1-P2': true, '1.1-P3': true });
+    const info = computeSublevelLockInfo(rows, bank);
+    expect(info[0].passed).toBe(true);
+    expect(info[1].unlocked).toBe(true);
+    expect(info[2].unlocked).toBe(false);
+  });
+
+  it('a partial attempt never passes, even if everything answered was correct', () => {
+    const rows = attemptRows('a1', { '1.1-P1': true, '1.1-P2': true });
+    const info = computeSublevelLockInfo(rows, bank);
+    expect(info[0]).toMatchObject({ passed: false, bestScorePercent: null });
+    expect(info[1].unlocked).toBe(false);
+  });
+
+  it('a passing retry counts even after a failed first attempt', () => {
+    const rows = [
+      ...attemptRows('a1', { '1.1-P1': true, '1.1-P2': false, '1.1-P3': false }),
+      ...attemptRows('a2', { '1.1-P1': true, '1.1-P2': true, '1.1-P3': true }),
+    ];
+    expect(computeSublevelLockInfo(rows, bank)[0]).toMatchObject({ passed: true, bestScorePercent: 100 });
+  });
+
+  it('passing a later sublevel does not unlock past an unpassed earlier one', () => {
+    const rows = [
+      ...attemptRows('a1', { '1.1-P1': true, '1.1-P2': true, '1.1-P3': false }),
+      ...attemptRows('a2', { '1.2-P1': true, '1.2-P2': true }),
+    ];
+    const info = computeSublevelLockInfo(rows, bank);
+    expect(info[1]).toMatchObject({ sublevel: '1.2', passed: true, unlocked: false });
+    expect(info[2].unlocked).toBe(false);
+  });
+
+  it('pass boundary: exactly 80% passes, just under fails', () => {
+    const fiveQ = ['a', 'b', 'c', 'd', 'e'].map((s) => makeQuestion({ id: `1.1-${s}`, level: 1, sublevel: '1.1' }));
+    const rowsFor = (correct: number) =>
+      fiveQ.map((q, i) => makeRow({ attemptId: 'a1', questionId: q.id, result: i < correct }));
+    expect(computeSublevelLockInfo(rowsFor(4), fiveQ)[0].passed).toBe(true);
+    expect(computeSublevelLockInfo(rowsFor(3), fiveQ)[0].passed).toBe(false);
+  });
+});
+
+describe('computeLockedContinueTarget', () => {
+  it('nothing started -> first sublevel', () => {
+    expect(computeLockedContinueTarget([], bank)).toEqual({ level: 1, sublevel: '1.1', reason: 'not_started' });
+  });
+
+  it('failed a full attempt -> stays on that sublevel to retry, never the locked next one', () => {
+    const rows = attemptRows('a1', { '1.1-P1': true, '1.1-P2': false, '1.1-P3': false });
+    expect(computeLockedContinueTarget(rows, bank)).toMatchObject({ level: 1, sublevel: '1.1' });
+  });
+
+  it('passed 1.1 -> targets 1.2', () => {
+    const rows = attemptRows('a1', { '1.1-P1': true, '1.1-P2': true, '1.1-P3': true });
+    expect(computeLockedContinueTarget(rows, bank)).toMatchObject({ level: 1, sublevel: '1.2' });
+  });
+
+  it('everything passed -> sequence_complete on the last sublevel', () => {
+    const rows = [
+      ...attemptRows('a1', { '1.1-P1': true, '1.1-P2': true, '1.1-P3': true }),
+      ...attemptRows('a2', { '1.2-P1': true, '1.2-P2': true }),
+      ...attemptRows('a3', { '2.1-P1': true, '2.1-P2': true }),
+    ];
+    expect(computeLockedContinueTarget(rows, bank)).toEqual({ level: 2, sublevel: '2.1', reason: 'sequence_complete' });
   });
 });

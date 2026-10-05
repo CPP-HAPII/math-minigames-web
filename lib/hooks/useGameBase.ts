@@ -60,5 +60,6 @@ export function useGameBase(score: number): GameBase {
     [],
   );
 
+
   return { score, hadMistake, markMistake, wasCleanCorrect, elapsedSeconds };
 }

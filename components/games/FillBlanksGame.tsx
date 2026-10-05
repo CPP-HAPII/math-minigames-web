@@ -91,6 +91,7 @@ export default function FillBlanksGame({ question, assistLevel, onComplete }: Fi
   const [result, setResult] = useState<CheckResult | null>(null);
 
   const solved = result === 'correct';
+  const locked = solved || result === 'wrong';
 
   // Theme — guard hydration so SSR uses the default profile (matches other pages).
   const profile = useThemeStore(selectActiveProfile);
@@ -99,13 +100,13 @@ export default function FillBlanksGame({ question, assistLevel, onComplete }: Fi
   const p = hydrated ? profile : themes[0];
 
   function handleSelect(option: string) {
-    if (solved) return;
+    if (locked) return;
     setFilled((prev) => (prev.length >= maxSelection ? prev : [...prev, option])); // cap at #blanks
     setResult(null); // clear stale feedback when the selection changes
   }
 
   function handleClear() {
-    if (solved) return;
+    if (locked) return;
     setFilled([]);
     setResult(null);
   }
@@ -119,6 +120,7 @@ export default function FillBlanksGame({ question, assistLevel, onComplete }: Fi
       onComplete(base.wasCleanCorrect());
     } else if (outcome === 'wrong') {
       base.markMistake();
+      onComplete(false);
     }
     // 'incomplete' → just prompt to fill the remaining blanks (no mistake, matches Jumble).
   }
@@ -159,7 +161,7 @@ export default function FillBlanksGame({ question, assistLevel, onComplete }: Fi
     opacity: disabled ? 0.5 : 1,
   });
 
-  const actionsDisabled = filled.length === 0 || solved;
+  const actionsDisabled = filled.length === 0 || locked;
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
@@ -247,7 +249,7 @@ export default function FillBlanksGame({ question, assistLevel, onComplete }: Fi
         }}
       >
         {question.optionList.map((option, i) => (
-          <button key={i} onClick={() => handleSelect(option)} disabled={solved} style={optionButton(solved)}>
+          <button key={i} onClick={() => handleSelect(option)} disabled={locked} style={optionButton(locked)}>
             {option}
           </button>
         ))}

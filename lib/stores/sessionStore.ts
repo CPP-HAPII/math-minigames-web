@@ -4,7 +4,9 @@ import type { AnyGameData, AssistLevel, Difficulty, QuestionLog, QuizAttempt } f
 
 // Mirrors SeriesHomePageState (game_series.dart) + PageDataManager (data_manager.dart).
 // Per-series fields reset at series start; highScore persists across sessions.
-// Logging via addQuestionLog (called on Continue/Skip) — never on unmount.
+// The active question array is a queue: an incorrect question is appended to
+// its end and is not considered complete until it is eventually answered
+// correctly.
 
 interface SessionState {
   // Per-series — cleared by startSession / resetSession
@@ -22,7 +24,12 @@ interface SessionState {
    */
   correctedAfterMistakeCount: number;
   progress: number;
+  /** One final log per question, written only after that question is correct. */
   questionLogs: QuestionLog[];
+  /** Number of unique questions selected when this series began. */
+  originalQuestionCount: number;
+  /** Question IDs that have had at least one incorrect answer this series. */
+  mistakenQuestionIds: string[];
   questions: AnyGameData[];
   currentIndex: number;
   difficulty: Difficulty;
@@ -60,10 +67,9 @@ interface SessionState {
   recordAssistInteraction: (interaction: string, level: AssistLevel) => void;
 
   /**
-   * Score + log a completed question and advance to the next one.
-   * wasCorrect follows the useGameBase onComplete(!hadMistake) contract:
-   * true = first-try correct, false = correct only after a mistake. See
-   * correctCount / correctedAfterMistakeCount above for what each counts.
+   * Handle one answer submission. Incorrect answers are appended to the end
+   * of the active queue; only a correct answer creates the final QuestionLog
+   * and awards the question's points.
    */
   submitAnswer: (question: AnyGameData, wasCorrect: boolean, elapsedSeconds: number) => void;
 
@@ -77,6 +83,8 @@ const SESSION_DEFAULTS = {
   correctedAfterMistakeCount: 0,
   progress: 0,
   questionLogs: [] as QuestionLog[],
+  originalQuestionCount: 0,
+  mistakenQuestionIds: [] as string[],
   questions: [] as AnyGameData[],
   currentIndex: 0,
   difficulty: 'random' as Difficulty,
@@ -95,7 +103,13 @@ export const useSessionStore = create<SessionState>()(
       highScore: 0,
 
       startSession: (questions, difficulty) =>
-        set({ ...SESSION_DEFAULTS, questions, difficulty, seriesStartedAt: Date.now() }),
+        set({
+          ...SESSION_DEFAULTS,
+          questions,
+          originalQuestionCount: questions.length,
+          difficulty,
+          seriesStartedAt: Date.now(),
+        }),
       resetSession: () => set(SESSION_DEFAULTS),
 
       addQuestionLog: (log) =>
@@ -125,35 +139,64 @@ export const useSessionStore = create<SessionState>()(
         })),
 
       submitAnswer: (question, wasCorrect, elapsedSeconds) => {
-        const {
-          addQuestionLog,
-          increaseScore,
-          increaseCorrect,
-          increaseCorrectedAfterMistake,
-          setProgress,
-          pendingAssistInteractions,
-          pendingAssistLevel,
-        } = get();
+        const state = get();
+        const activeQuestion = state.questions[state.currentIndex];
 
-        addQuestionLog({
-          questionId: question.id,
-          skills: question.skills,
-          result: wasCorrect,
-          timeTakenInSeconds: elapsedSeconds,
-          assistUsed: pendingAssistLevel,
-          assistInteractions: pendingAssistInteractions,
-        });
-        increaseScore(question.score);
-        if (wasCorrect) {
-          increaseCorrect();
-        } else {
-          increaseCorrectedAfterMistake();
+        // Ignore stale or duplicate callbacks. This can happen if a delayed
+        // feedback callback fires after the player has already moved on.
+        if (!activeQuestion || activeQuestion.id !== question.id) return;
+
+        const hadMistake = state.mistakenQuestionIds.includes(question.id);
+        const nextIndex = state.currentIndex + 1;
+
+        if (!wasCorrect) {
+          // Keep the question in the session, but move it behind every
+          // question currently waiting in the queue. If it is wrong again,
+          // it is appended again, so the player keeps seeing it until correct.
+          set({
+            questions: [...state.questions, question],
+            currentIndex: nextIndex,
+            mistakenQuestionIds: hadMistake
+              ? state.mistakenQuestionIds
+              : [...state.mistakenQuestionIds, question.id],
+            pendingAssistInteractions: [],
+            pendingAssistLevel: null,
+            progress:
+              state.originalQuestionCount > 0
+                ? state.questionLogs.length / state.originalQuestionCount
+                : 1,
+          });
+          return;
         }
 
-        const { questions, currentIndex } = get();
-        const nextIndex = currentIndex + 1;
-        set({ currentIndex: nextIndex, pendingAssistInteractions: [], pendingAssistLevel: null });
-        setProgress(questions.length > 0 ? nextIndex / questions.length : 1);
+        // A newly mounted retry component reports true on its first successful
+        // submission, so use the session-level mistake set to preserve the
+        // meaningful distinction between a clean first-try answer and a
+        // question that needed one or more retries.
+        const finalWasCleanCorrect = !hadMistake;
+        const log: QuestionLog = {
+          questionId: question.id,
+          skills: question.skills,
+          result: finalWasCleanCorrect,
+          timeTakenInSeconds: elapsedSeconds,
+          assistUsed: state.pendingAssistLevel,
+          assistInteractions: state.pendingAssistInteractions,
+        };
+        const nextLogs = [...state.questionLogs, log];
+
+        set({
+          questionLogs: nextLogs,
+          score: state.score + question.score,
+          correctCount: state.correctCount + (finalWasCleanCorrect ? 1 : 0),
+          correctedAfterMistakeCount: state.correctedAfterMistakeCount + (finalWasCleanCorrect ? 0 : 1),
+          currentIndex: nextIndex,
+          pendingAssistInteractions: [],
+          pendingAssistLevel: null,
+          progress:
+            state.originalQuestionCount > 0
+              ? Math.min(1, nextLogs.length / state.originalQuestionCount)
+              : 1,
+        });
       },
 
       completeSeries: () => {

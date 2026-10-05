@@ -5,6 +5,10 @@ export interface LevelCardSublevel {
   key: string;
   name: string;
   status: SublevelStatus;
+  /** New: cascading-unlock state from computeSublevelLockInfo. */
+  unlocked: boolean;
+  passed: boolean;
+  bestScorePercent: number | null;
 }
 
 export interface LevelCardData {
@@ -16,15 +20,24 @@ export interface LevelCardData {
 interface LevelGridProps {
   profile: ColorProfile;
   levels: LevelCardData[];
-  /** Wiring sublevel clicks to actually start a game is deferred to the next pass. */
   onSublevelClick: (level: number, sublevel: string) => void;
 }
 
+function LockIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="5" y="11" width="14" height="9" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </svg>
+  );
+}
+
 /**
- * The redesigned "Choose a level" grid — 5 level cards, each showing its
- * sublevels as chips. There is NO locked/gray-out state: every sublevel is
- * always clickable regardless of completion elsewhere (per product decision —
- * students can jump ahead to any level/sublevel).
+ * The "Choose a level" grid — 5 level cards, sublevels as chips. Locking is
+ * now real: a sublevel chip with unlocked === false is visually distinct and
+ * not clickable, regardless of its exposure `status`. This reverses the
+ * prior "no locked/gray-out state" product decision — see progressService.ts's
+ * computeSublevelLockInfo for how unlocked is derived.
  */
 export default function LevelGrid({ profile: p, levels, onSublevelClick }: LevelGridProps) {
   return (
@@ -53,11 +66,11 @@ function LevelCard({
 }) {
   const accent = p.homeLevelPalette[(card.level - 1) as 0 | 1 | 2 | 3 | 4] ?? p.homeLevelPalette[0];
   const totalCount = card.sublevels.length;
-  const completeCount = card.sublevels.filter((s) => s.status === 'complete').length;
-  const isLevelComplete = totalCount > 0 && completeCount === totalCount;
+  const passedCount = card.sublevels.filter((s) => s.passed).length;
+  const isLevelComplete = totalCount > 0 && passedCount === totalCount;
 
   const statusText =
-    totalCount === 0 ? 'No sublevels yet' : `${completeCount} of ${totalCount} sublevel${totalCount === 1 ? '' : 's'} complete`;
+    totalCount === 0 ? 'No sublevels yet' : `${passedCount} of ${totalCount} sublevel${totalCount === 1 ? '' : 's'} passed`;
 
   return (
     <div
@@ -128,24 +141,45 @@ function SublevelChip({
     alignItems: 'center',
     gap: '4px',
     border: 'none',
-    cursor: 'pointer',
   };
 
+  if (!sub.unlocked) {
+    return (
+      <button
+        disabled
+        title={`${sub.name} — complete the previous sublevel first`}
+        style={{
+          ...base,
+          backgroundColor: p.homePanelBackground,
+          border: `1px dashed ${p.homeBorder}`,
+          color: p.homeInkSoft,
+          opacity: 0.6,
+          cursor: 'not-allowed',
+        }}
+      >
+        <LockIcon />
+        {sub.key}
+      </button>
+    );
+  }
+
   let style: React.CSSProperties;
-  if (sub.status === 'complete') {
-    style = { ...base, background: p.homeUseGradientForActive ? p.homeAccentGradient : p.homeAccentSolid, color: '#ffffff' };
+  if (sub.passed) {
+    style = { ...base, background: p.homeUseGradientForActive ? p.homeAccentGradient : p.homeAccentSolid, color: '#ffffff', cursor: 'pointer' };
   } else if (sub.status === 'in_progress') {
-    style = { ...base, backgroundColor: p.homeSurfaceBackground, border: `2px solid ${accent.accent}`, color: accent.ink, padding: '6px 10px' };
+    style = { ...base, backgroundColor: p.homeSurfaceBackground, border: `2px solid ${accent.accent}`, color: accent.ink, padding: '6px 10px', cursor: 'pointer' };
+  } else if (sub.status === 'complete') {
+    // Fully attempted but didn't hit 80% — unlocked (a prior pass elsewhere
+    // isn't required to retry), but visually flagged as needing another try.
+    style = { ...base, backgroundColor: p.homeSurfaceBackground, border: `2px solid ${p.clearAnswerButtonColor}`, color: p.clearAnswerButtonColor, cursor: 'pointer' };
   } else {
-    // 'not_started' — a plain, fully-clickable chip. No lock icon, no dimming:
-    // there is no locking in this data model, so this must not read as disabled.
-    style = { ...base, backgroundColor: p.homePanelBackground, border: `1px solid ${p.homeBorder}`, color: p.homeInkSoft };
+    style = { ...base, backgroundColor: p.homePanelBackground, border: `1px solid ${p.homeBorder}`, color: p.homeInkSoft, cursor: 'pointer' };
   }
 
   return (
-    <button onClick={onClick} style={style} title={sub.name}>
+    <button onClick={onClick} style={style} title={sub.bestScorePercent !== null ? `${sub.name} — best score ${sub.bestScorePercent}%` : sub.name}>
       {sub.key}
-      {sub.status === 'complete' && ' ✓'}
+      {sub.passed && ' ✓'}
     </button>
   );
 }

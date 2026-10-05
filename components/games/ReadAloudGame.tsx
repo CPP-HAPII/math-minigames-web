@@ -47,6 +47,7 @@ export default function ReadAloudGame({ question, assistLevel, onComplete }: Rea
 
   const [result, setResult] = useState<CheckResult | null>(null);
   const solved = result === 'correct';
+  const locked = solved || result === 'wrong';
 
   // The transcript actually compared against multiAcceptedAnswers: STT engines
   // commonly transcribe spoken numbers as digits ("476"), so when
@@ -64,7 +65,7 @@ export default function ReadAloudGame({ question, assistLevel, onComplete }: Rea
   const p = hydrated ? profile : themes[0];
 
   function handleToggleListening() {
-    if (solved || !speech.supported) return;
+    if (locked || !speech.supported) return;
     if (speech.status === 'listening') {
       speech.stop();
     } else {
@@ -74,7 +75,7 @@ export default function ReadAloudGame({ question, assistLevel, onComplete }: Rea
   }
 
   function handleClear() {
-    if (solved) return;
+    if (locked) return;
     speech.reset();
     setResult(null);
   }
@@ -88,6 +89,7 @@ export default function ReadAloudGame({ question, assistLevel, onComplete }: Rea
       onComplete(base.wasCleanCorrect());
     } else {
       base.markMistake();
+      onComplete(false);
     }
   }
 
@@ -126,7 +128,7 @@ export default function ReadAloudGame({ question, assistLevel, onComplete }: Rea
     }
   })();
 
-  const checkDisabled = processedTranscript.trim().length === 0 || solved || !speech.supported;
+  const checkDisabled = processedTranscript.trim().length === 0 || locked || !speech.supported;
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
@@ -187,8 +189,8 @@ export default function ReadAloudGame({ question, assistLevel, onComplete }: Rea
           <>
             <button
               onClick={handleToggleListening}
-              disabled={solved}
-              style={actionButton(speech.status === 'listening' ? p.clearAnswerButtonColor : p.buttonColor, solved)}
+              disabled={locked}
+              style={actionButton(speech.status === 'listening' ? p.clearAnswerButtonColor : p.buttonColor, locked)}
             >
               {speech.status === 'listening' ? '⏹ Stop Listening' : '🎤 Start Speaking'}
             </button>
@@ -209,8 +211,8 @@ export default function ReadAloudGame({ question, assistLevel, onComplete }: Rea
         </button>
         <button
           onClick={handleClear}
-          disabled={speech.transcript.length === 0 || solved}
-          style={actionButton(p.clearAnswerButtonColor, speech.transcript.length === 0 || solved)}
+          disabled={speech.transcript.length === 0 || locked}
+          style={actionButton(p.clearAnswerButtonColor, speech.transcript.length === 0 || locked)}
         >
           Clear
         </button>
