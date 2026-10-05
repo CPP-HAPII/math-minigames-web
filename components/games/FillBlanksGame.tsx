@@ -272,6 +272,7 @@ export default function FillBlanksGame({ question, assistLevel, onComplete }: Fi
         profile={p}
         wrongMessage="Try again — that isn’t quite right."
         incompleteMessage="Fill in all the blanks first."
+        correctAnswer={question.multiAcceptedAnswers.toString()}
       />
     </section>
   );

@@ -315,6 +315,7 @@ export default function JumbleGame({ question, assistLevel, onComplete }: Jumble
             profile={p}
             wrongMessage="Not quite — here’s the next question."
             incompleteMessage="Please select more answers."
+            correctAnswer={question.multiAcceptedAnswers.flat().join(' ')}
           />
         </main>
 

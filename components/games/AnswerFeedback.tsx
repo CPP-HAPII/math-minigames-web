@@ -11,6 +11,8 @@ interface AnswerFeedbackProps {
   wrongMessage: string;
   /** Shown for outcome === 'incomplete' — only Jumble/FillBlanks/Playback have that state. */
   incompleteMessage?: string;
+  /** Shown for outcome === 'wrong' */
+  correctAnswer: string;
 }
 
 /** Fixed burst offsets (no Math.random() — see useGameBase.ts's Date.now() precedent for why this codebase avoids impure calls during render). */
@@ -54,6 +56,7 @@ export default function AnswerFeedback({
   profile: p,
   wrongMessage,
   incompleteMessage,
+  correctAnswer,
 }: AnswerFeedbackProps) {
   if (!outcome) return null;
 
@@ -69,7 +72,7 @@ export default function AnswerFeedback({
   if (outcome === 'wrong') {
     return (
       <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '1.1rem', fontWeight: 700, color: p.clearAnswerButtonColor }}>
-        {wrongMessage}
+        {correctAnswer}
       </p>
     );
   }

@@ -224,6 +224,7 @@ export default function ReadAloudGame({ question, assistLevel, onComplete }: Rea
         wasCleanCorrect={!base.hadMistake}
         profile={p}
         wrongMessage="Try again — that isn’t quite right."
+        correctAnswer={question.multiAcceptedAnswers.toString()}
       />
     </section>
   );

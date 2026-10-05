@@ -181,6 +181,7 @@ export default function TypingGame({ question, assistLevel, onComplete }: Typing
         wasCleanCorrect={!base.hadMistake}
         profile={p}
         wrongMessage="Try again — that isn’t quite right."
+        correctAnswer={question.multiAcceptedAnswers.toString()}
       />
     </section>
   );

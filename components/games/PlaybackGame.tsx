@@ -417,6 +417,7 @@ export default function PlaybackGame({ question, assistLevel, onComplete }: Play
             profile={p}
             wrongMessage="Try again — that order isn’t quite right."
             incompleteMessage="Please select more answers."
+            correctAnswer={question.multiAcceptedAnswers.toString()}
           />
         </main>
 
