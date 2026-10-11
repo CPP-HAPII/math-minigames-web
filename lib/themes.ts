@@ -235,5 +235,99 @@ export const darkGreenTheme: ColorProfile = {
   ],
 };
 
-/** Ordered array of themes matching ThemeController._getProfileByIndex() indices (0-2). */
-export const themes: [ColorProfile, ColorProfile, ColorProfile] = [greenTheme, hapiiTheme, darkGreenTheme];
+export const SCUTheme: ColorProfile = {
+idKey: 'SCU flavor',
+
+backgroundColor: '#fefefd',
+headerColor: '#a20110',
+
+buttonColor: '#fdb201',
+textColor: '#340005',
+contrastTextColor: '#ffffff',
+checkAnswerButtonColor: '#fdb201',
+clearAnswerButtonColor: '#a20110',
+disabledButtonColor: '#888888',
+
+cardBackground: '#a20110',
+cardTextColor: '#fefefd',
+
+homeLabel: 'Bucky the Bronco',
+homePageBackground: '#fefefd',
+homeHeaderBackground: '#a20110',
+homeHeaderBorderBottom: '',
+
+homeWelcomeColor: '#ffffff',
+homeWelcomeGradient: '',
+homeWelcomeFont: "'Baloo 2', sans-serif",
+
+homePanelBackground: '',
+homeSurfaceBackground: '',
+homeBorder: '#a20110',
+homeInk: '#a20110',
+homeInkSoft: '#a2454e',
+homeAccentSolid: '#a2454e',
+homeAccentGradient: '#e23b4c',
+homeUseGradientForActive: false,
+homeThemeButtonActiveBackground: '#fdb201',
+homeThemeButtonActiveColor: '#a20110',
+homeThemeButtonInactiveColor: '#ffa7a6',
+homeThemeButtonInactiveBorder: '#ffa7a6',
+homeThemeButtonInactiveBackground: 'transparent',
+
+homeLevelPalette: [
+  { accent: '#a20110', bg: '#efaab1', ink: '#cb2738' },
+  { accent: '#a20110', bg: '#efaab1', ink: '#cb2738' },
+  { accent: '#a20110', bg: '#efaab1', ink: '#cb2738' },
+  { accent: '#a20110', bg: '#efaab1', ink: '#cb2738' },
+  { accent: '#a20110', bg: '#efaab1', ink: '#cb2738' },
+  ],
+};
+
+export const CPPTheme: ColorProfile = {
+idKey: 'CPP flavor',
+
+backgroundColor: '#fcfcfc',
+headerColor: '#114725',
+
+buttonColor: '#fdb302',
+textColor: '#041e13',
+contrastTextColor: '#ffffff',
+checkAnswerButtonColor: '#fdb302',
+clearAnswerButtonColor: '#114725',
+disabledButtonColor: '#888888',
+
+cardBackground: '#114725',
+cardTextColor: '#cce8d3',
+
+homeLabel: 'Billy Bronco',
+homePageBackground: '#fcfcfc',
+homeHeaderBackground: '#114725',
+homeHeaderBorderBottom: '',
+homeWelcomeColor: '#ffffff',
+homeWelcomeGradient: '',
+homeWelcomeFont: "'Baloo 2', sans-serif",
+homePanelBackground: '',
+homeSurfaceBackground: '',
+homeBorder: '#114725',
+homeInk: '#114725',
+homeInkSoft: '#2d533b',
+homeAccentSolid: '#2d533b',
+homeAccentGradient: '#38924e',
+homeUseGradientForActive: false,
+homeThemeButtonActiveBackground: '#fdb302',
+homeThemeButtonActiveColor: '#114725',
+homeThemeButtonInactiveColor: '#cce8d3',
+homeThemeButtonInactiveBorder: '#cce8d3',
+homeThemeButtonInactiveBackground: 'transparent',
+
+homeLevelPalette: [
+  { accent: '#114725', bg: '#cce8d3', ink: '#1d783e' },
+  { accent: '#114725', bg: '#cce8d3', ink: '#1d783e' },
+  { accent: '#114725', bg: '#cce8d3', ink: '#1d783e' },
+  { accent: '#114725', bg: '#cce8d3', ink: '#1d783e' },
+  { accent: '#114725', bg: '#cce8d3', ink: '#1d783e' },
+  ],
+};
+
+/** Ordered array of themes matching ThemeController._getProfileByIndex() indices (0-4). */
+export const themes: [ColorProfile, ColorProfile, ColorProfile, ColorProfile, ColorProfile] = [greenTheme, hapiiTheme, darkGreenTheme, SCUTheme, CPPTheme];

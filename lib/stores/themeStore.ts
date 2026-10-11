@@ -16,7 +16,7 @@ export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
       themeIndex: 0,
-      setTheme: (index) => set({ themeIndex: Math.max(0, Math.min(2, index)) }),
+      setTheme: (index) => set({ themeIndex: Math.max(0, Math.min(4, index)) }),
     }),
     {
       name: 'theme_id',
