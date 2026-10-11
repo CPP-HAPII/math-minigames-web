@@ -53,9 +53,9 @@ export interface ColorProfile {
   homeWelcomeGradient: string;
   /** font-family value for the welcome heading. */
   homeWelcomeFont: string;
-  /** Language Assist panel background. */
+  /** Opaque background for Language Assist panels and selected settings options. */
   homePanelBackground: string;
-  /** Continue strip + level card background. */
+  /** Opaque background for the Continue strip, level cards, and Settings dialog. */
   homeSurfaceBackground: string;
   homeBorder: string;
   /** Primary body text color on home-screen surfaces. */
@@ -260,8 +260,8 @@ homeWelcomeColor: '#ffffff',
 homeWelcomeGradient: '',
 homeWelcomeFont: "'Baloo 2', sans-serif",
 
-homePanelBackground: '',
-homeSurfaceBackground: '',
+homePanelBackground: '#fff1f2',
+homeSurfaceBackground: '#fefefd',
 homeBorder: '#a20110',
 homeInk: '#a20110',
 homeInkSoft: '#a2454e',
@@ -306,8 +306,8 @@ homeHeaderBorderBottom: '',
 homeWelcomeColor: '#ffffff',
 homeWelcomeGradient: '',
 homeWelcomeFont: "'Baloo 2', sans-serif",
-homePanelBackground: '',
-homeSurfaceBackground: '',
+homePanelBackground: '#cce8d3',
+homeSurfaceBackground: '#fcfcfc',
 homeBorder: '#114725',
 homeInk: '#114725',
 homeInkSoft: '#2d533b',
