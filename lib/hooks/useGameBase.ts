@@ -59,7 +59,6 @@ export function useGameBase(score: number): GameBase {
     () => Math.floor((Date.now() - startTimeRef.current) / 1000),
     [],
   );
-
-
+  
   return { score, hadMistake, markMistake, wasCleanCorrect, elapsedSeconds };
 }

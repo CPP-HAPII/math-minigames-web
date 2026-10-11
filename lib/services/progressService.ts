@@ -161,7 +161,7 @@ export function computeContinueTarget(rows: QuestionAttemptRow[], bank: AnyGameD
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// Locking (new): pass/fail-per-attempt and cascading unlock, layered on top
+// Locking: pass/fail-per-attempt and cascading unlock, layered on top
 // of everything above without changing its meaning.
 // ─────────────────────────────────────────────────────────────────────────
 
