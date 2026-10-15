@@ -6,6 +6,8 @@ import { useHoverTranslation } from '@/lib/hooks/useHoverTranslation';
 
 interface HoverTranslatedTextProps {
   text: string;
+  enabled?: boolean;
+  textAlign?: 'left' | 'center';
   profile: ColorProfile;
   targetLanguage?: string;
   fontSize?: string;
@@ -29,7 +31,15 @@ const TOOLTIP_DELAY_MS = 150;
  * via useHoverTranslation — same provider-agnostic pathway the Stage 12
  * translate button calls.
  */
-export default function HoverTranslatedText({ text, profile: p, targetLanguage = 'es', fontSize = '1.6rem', textColor }: HoverTranslatedTextProps) {
+export default function HoverTranslatedText(props: HoverTranslatedTextProps) {
+  if (props.enabled === false) {
+    return <p style={{ fontSize: props.fontSize ?? '1.6rem', margin: 0, fontWeight: 700, color: props.textColor ?? props.profile.contrastTextColor, textAlign: props.textAlign ?? 'center' }}>{props.text}</p>;
+  }
+  // Unmounting this child cancels its tooltip timer when translation is disabled.
+  return <ActiveHoverText key={`${props.text}-${props.targetLanguage ?? 'es'}`} {...props} />;
+}
+
+function ActiveHoverText({ text, profile: p, targetLanguage = 'es', fontSize = '1.6rem', textColor, textAlign = 'center' }: HoverTranslatedTextProps) {
   const { translations, loadingWords, requestTranslation } = useHoverTranslation(targetLanguage);
   const [visibleTooltip, setVisibleTooltip] = useState<number | null>(null);
   const tooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -54,7 +64,7 @@ export default function HoverTranslatedText({ text, profile: p, targetLanguage =
   const tokens = text.match(TOKEN_RE) ?? [];
 
   return (
-    <p style={{ fontSize, margin: 0, fontWeight: 700, color: textColor ?? p.contrastTextColor, textAlign: 'center' }}>
+    <p style={{ fontSize, margin: 0, fontWeight: 700, color: textColor ?? p.contrastTextColor, textAlign }}>
       {tokens.map((token, i) => {
         if (token.trim().length === 0) return <span key={i}>{token}</span>;
 
@@ -78,8 +88,9 @@ export default function HoverTranslatedText({ text, profile: p, targetLanguage =
                   left: '50%',
                   transform: 'translateX(-50%)',
                   marginBottom: '0.35rem',
-                  backgroundColor: p.headerColor,
-                  color: p.textColor,
+                  backgroundColor: p.homeSurfaceBackground,
+                  color: p.homeInk,
+                  border: `1px solid ${p.homeAccentSolid}`,
                   padding: '0.25rem 0.6rem',
                   borderRadius: '0.4rem',
                   fontSize: '0.9rem',

@@ -166,7 +166,7 @@ export function computeContinueTarget(rows: QuestionAttemptRow[], bank: AnyGameD
 // ─────────────────────────────────────────────────────────────────────────
 
 /** Minimum fraction correct, within a single full attempt at a sublevel, to count as passed. */
-export const SUBLEVEL_PASS_THRESHOLD = 0.8;
+export const SUBLEVEL_PASS_THRESHOLD = 1.0;
 
 export interface AttemptSummary {
   attemptId: string;

@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useHydrated } from '@/lib/hooks/useHydrated';
 import type { AssistLevel, ReadAloudGameData } from '@/lib/types';
 import { normalizeComparisonString } from '@/lib/normalize';
 import { convertNumbersAndSymbolsToWords } from '@/lib/numberToWords';
@@ -8,14 +9,13 @@ import { useThemeStore, selectActiveProfile } from '@/lib/stores/themeStore';
 import { themes } from '@/lib/themes';
 import { useGameBase } from '@/lib/hooks/useGameBase';
 import { useSpeechRecognition } from '@/lib/hooks/useSpeechRecognition';
+import styles from './TaskLayout.module.css';
 import AnswerFeedback from './AnswerFeedback';
-import TranslateButton from './TranslateButton';
-import HoverTranslatedText from './HoverTranslatedText';
-import SpeakQuestionButton from './SpeakQuestionButton';
+import { AnswerPanel, QuestionCard } from './TaskPanels';
 
 interface ReadAloudGameProps {
   question: ReadAloudGameData;
-  /** Current language-assist level. Wired into the assist UI in Stages 12–14. */
+  /** Language assist controls are rendered by the parent TaskLayout. */
   assistLevel: AssistLevel;
   /** Called once the question is solved. wasCorrect = clean correct (no prior wrong attempt). */
   onComplete: (wasCorrect: boolean) => void;
@@ -41,7 +41,7 @@ function evaluateTranscript(transcript: string, answers: string[][]): CheckResul
   return answers.some((answer) => normalizeComparisonString(answer.join(' ')) === norm) ? 'correct' : 'wrong';
 }
 
-export default function ReadAloudGame({ question, assistLevel, onComplete }: ReadAloudGameProps) {
+export default function ReadAloudGame({ question, onComplete }: ReadAloudGameProps) {
   const base = useGameBase(question.score);
   const speech = useSpeechRecognition();
 
@@ -60,8 +60,7 @@ export default function ReadAloudGame({ question, assistLevel, onComplete }: Rea
 
   // Theme — guard hydration so SSR uses the default profile (matches other pages).
   const profile = useThemeStore(selectActiveProfile);
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => setHydrated(true), []);
+  const hydrated = useHydrated();
   const p = hydrated ? profile : themes[0];
 
   function handleToggleListening() {
@@ -93,139 +92,32 @@ export default function ReadAloudGame({ question, assistLevel, onComplete }: Rea
     }
   }
 
-  // ── Styles (shared look with TypingGame) ────────────────────────────────────
-  const card: React.CSSProperties = {
-    background: p.homeAccentGradient,
-    borderRadius: '1rem',
-    padding: '1.25rem 1.5rem',
-    margin: '0.75rem auto',
-    maxWidth: '760px',
-    width: '100%',
-  };
-
-  const actionButton = (bg: string, disabled: boolean): React.CSSProperties => ({
-    backgroundColor: disabled ? p.disabledButtonColor : bg,
-    color: p.contrastTextColor,
-    border: 'none',
-    borderRadius: '0.6rem',
-    padding: '0.65rem 1.4rem',
-    fontSize: '1rem',
-    fontWeight: 700,
-    cursor: disabled ? 'not-allowed' : 'pointer',
-    opacity: disabled ? 0.5 : 1,
-  });
-
-  const micStatusText = (() => {
-    switch (speech.status) {
-      case 'listening':
-        return 'Listening…';
-      case 'stopped':
-        return null; // transcript itself is the feedback once stopped
-      case 'error':
-        return speech.error;
-      default:
-        return null;
-    }
-  })();
-
+  const micStatusText = speech.status === 'listening' ? 'Listening…' : speech.status === 'error' ? speech.error : null;
   const checkDisabled = processedTranscript.trim().length === 0 || locked || !speech.supported;
 
-  // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <section
-      style={{
-        background: p.homePageBackground,
-        color: p.textColor,
-        padding: '1.5rem 1rem 3rem',
-        minHeight: '100%',
-      }}
-    >
-      {/* Written prompt — the instruction (Dart: titleText). */}
-      <div style={{ ...card, textAlign: 'center' }}>
-        <p style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0, color: p.contrastTextColor }}>
-          {question.writtenPrompt}
-        </p>
-      </div>
-
-      {/*
-        Problem text — shown upfront, unlike Playback (Read Aloud is a
-        speak-the-answer exercise, not a listening exercise; the question
-        itself is read, not heard). Hover-translate is always available; the
-        rest of the assist card is gated by assistLevel, mirroring the Dart
-        `if (assistLevel == novice || intermediate)` wrapper.
-      */}
-      <div style={{ ...card, textAlign: 'center' }} data-assist-level={assistLevel}>
-        <HoverTranslatedText text={question.displayedProblem} profile={p} textColor={p.contrastTextColor} />
-        {question.additionalInstructions && (
-          <p style={{ fontSize: '0.9rem', fontWeight: 700, margin: '0.6rem 0 0', color: p.contrastTextColor, opacity: 0.8 }}>
-            {question.additionalInstructions}
-          </p>
-        )}
-        {assistLevel !== 'advanced' && (
-          <>
-            {assistLevel === 'novice' && (
-              <SpeakQuestionButton text={question.displayedProblem} profile={p} />
-            )}
-            <TranslateButton
-              sourceText={question.displayedProblem}
-              profile={p}
-              autoTranslate={assistLevel === 'novice'}
-            />
-          </>
-        )}
-      </div>
-
-      {/* Speech controls + live transcript. */}
-      <div style={{ ...card, textAlign: 'center' }}>
-        <p style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.contrastTextColor }}>
-          Your phrase
-        </p>
-
-        {!speech.supported ? (
-          <p style={{ color: p.clearAnswerButtonColor, fontWeight: 700 }}>
-            This feature requires Chrome. Speech recognition isn&rsquo;t available in this browser.
-          </p>
-        ) : (
-          <>
-            <button
-              onClick={handleToggleListening}
-              disabled={locked}
-              style={actionButton(speech.status === 'listening' ? p.clearAnswerButtonColor : p.buttonColor, locked)}
-            >
-              {speech.status === 'listening' ? '⏹ Stop Listening' : '🎤 Start Speaking'}
-            </button>
-            {micStatusText && (
-              <p style={{ margin: '0.6rem 0 0', fontSize: '0.9rem', fontWeight: 700, color: p.contrastTextColor, opacity: 0.85 }}>{micStatusText}</p>
-            )}
-            <p style={{ fontSize: '1.15rem', fontWeight: 700, margin: '0.75rem 0 0', color: p.contrastTextColor }}>
-              {speech.transcript || DEFAULT_TRANSCRIPT_PLACEHOLDER}
-            </p>
-          </>
-        )}
-      </div>
-
-      {/* Actions. */}
-      <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', marginTop: '0.5rem' }}>
-        <button onClick={handleCheck} disabled={checkDisabled} style={actionButton(p.checkAnswerButtonColor, checkDisabled)}>
-          Check Answer
-        </button>
-        <button
-          onClick={handleClear}
-          disabled={speech.transcript.length === 0 || locked}
-          style={actionButton(p.clearAnswerButtonColor, speech.transcript.length === 0 || locked)}
-        >
-          Clear
-        </button>
-      </div>
-
-      {/* Feedback. */}
-      <AnswerFeedback
-        outcome={result}
-        wasCleanCorrect={!base.hadMistake}
-        profile={p}
-        wrongMessage="Try again — that isn’t quite right."
-        correctAnswer={question.multiAcceptedAnswers.toString()}
-      />
-    </section>
+    <>
+      <QuestionCard instruction={question.writtenPrompt} text={question.displayedProblem} profile={p}>
+        {question.additionalInstructions && <p className={styles.help}>{question.additionalInstructions}</p>}
+      </QuestionCard>
+      <AnswerPanel
+        onClear={handleClear} onCheck={handleCheck} clearDisabled={speech.transcript.length === 0 || locked} checkDisabled={checkDisabled}
+        feedback={<AnswerFeedback outcome={result} wasCleanCorrect={!base.hadMistake} profile={p} wrongMessage="Try again — that isn’t quite right." />}
+      >
+        <div className={styles.speechAnswer}>
+          {speech.supported ? (
+            <div>
+              <button type="button" className={styles.secondaryButton} onClick={handleToggleListening} disabled={locked}>
+                {speech.status === 'listening' ? 'Stop Listening' : 'Start Speaking'}
+              </button>
+              {micStatusText && <p className={styles.help} role="status">{micStatusText}</p>}
+            </div>
+          ) : <p className={styles.help}>Speech recognition is not supported in this browser. Try using Chrome.</p>}
+          <div className={styles.answerArea} aria-label="Your spoken answer" aria-live="polite">
+            <p>{processedTranscript || DEFAULT_TRANSCRIPT_PLACEHOLDER}</p>
+          </div>
+        </div>
+      </AnswerPanel>
+    </>
   );
 }

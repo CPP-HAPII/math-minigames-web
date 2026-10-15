@@ -1,19 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useHydrated } from '@/lib/hooks/useHydrated';
 import type { AssistLevel, FillBlanksGameData } from '@/lib/types';
 import { normalizeComparisonString } from '@/lib/normalize';
 import { useThemeStore, selectActiveProfile } from '@/lib/stores/themeStore';
 import { themes } from '@/lib/themes';
 import { useGameBase } from '@/lib/hooks/useGameBase';
+import styles from './TaskLayout.module.css';
 import AnswerFeedback from './AnswerFeedback';
-import TranslateButton from './TranslateButton';
-import HoverTranslatedText from './HoverTranslatedText';
-import SpeakQuestionButton from './SpeakQuestionButton';
+import { AnswerPanel, QuestionCard, WordChoices } from './TaskPanels';
 
 interface FillBlanksGameProps {
   question: FillBlanksGameData;
-  /** Current language-assist level. Wired into the assist UI in Stages 12–14. */
+  /** Language assist controls are rendered by the parent TaskLayout. */
   assistLevel: AssistLevel;
   /** Called once the question is solved. wasCorrect = clean correct (no prior wrong attempt). */
   onComplete: (wasCorrect: boolean) => void;
@@ -79,7 +79,7 @@ function renderPieces(blankForm: string, filled: string[]): Piece[] {
   return pieces;
 }
 
-export default function FillBlanksGame({ question, assistLevel, onComplete }: FillBlanksGameProps) {
+export default function FillBlanksGame({ question, onComplete }: FillBlanksGameProps) {
   // getMinSelection() = multiAcceptedAnswers.length — the number of blanks to fill.
   const maxSelection = question.multiAcceptedAnswers.length;
 
@@ -95,8 +95,7 @@ export default function FillBlanksGame({ question, assistLevel, onComplete }: Fi
 
   // Theme — guard hydration so SSR uses the default profile (matches other pages).
   const profile = useThemeStore(selectActiveProfile);
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => setHydrated(true), []);
+  const hydrated = useHydrated();
   const p = hydrated ? profile : themes[0];
 
   function handleSelect(option: string) {
@@ -127,153 +126,27 @@ export default function FillBlanksGame({ question, assistLevel, onComplete }: Fi
 
   const pieces = renderPieces(question.blankForm, filled);
 
-  // ── Styles (shared look with JumbleGame / TypingGame) ───────────────────────
-  const card: React.CSSProperties = {
-    background: p.homeAccentGradient,
-    borderRadius: '1rem',
-    padding: '1.25rem 1.5rem',
-    margin: '0.75rem auto',
-    maxWidth: '760px',
-    width: '100%',
-  };
-
-  const optionButton = (disabled: boolean): React.CSSProperties => ({
-    background: disabled ? p.disabledButtonColor : p.cardBackground,
-    color: p.cardTextColor,
-    border: 'none',
-    borderRadius: '0.5rem',
-    padding: '0.6rem 1.1rem',
-    fontSize: '1rem',
-    fontWeight: 700,
-    cursor: disabled ? 'not-allowed' : 'pointer',
-    opacity: disabled ? 0.5 : 1,
-  });
-
-  const actionButton = (bg: string, disabled: boolean): React.CSSProperties => ({
-    backgroundColor: bg,
-    color: p.contrastTextColor,
-    border: 'none',
-    borderRadius: '0.6rem',
-    padding: '0.65rem 1.4rem',
-    fontSize: '1rem',
-    fontWeight: 700,
-    cursor: disabled ? 'not-allowed' : 'pointer',
-    opacity: disabled ? 0.5 : 1,
-  });
-
   const actionsDisabled = filled.length === 0 || locked;
 
-  // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <section
-      style={{
-        background: p.homePageBackground,
-        color: p.textColor,
-        padding: '1.5rem 1rem 3rem',
-        minHeight: '100%',
-      }}
-    >
-      {/* Instruction — hardcoded in the Dart for this game. */}
-      <div style={{ ...card, textAlign: 'center' }}>
-        <p style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0, color: p.contrastTextColor }}>
-          Use the blocks below to form the written form of the expression:
-        </p>
-      </div>
-
-      {/*
-        Problem text — hover-translate is always available. The rest of the
-        assist card (speak-question, translate/auto-translate) is gated by
-        assistLevel, mirroring the Dart `if (assistLevel == novice ||
-        intermediate)` wrapper — hidden entirely for advanced/"Low Assist".
-      */}
-      <div style={{ ...card, textAlign: 'center' }} data-assist-level={assistLevel}>
-        <HoverTranslatedText text={question.displayedProblem} profile={p} textColor={p.contrastTextColor} />
-        {assistLevel !== 'advanced' && (
-          <>
-            {assistLevel === 'novice' && (
-              <SpeakQuestionButton text={question.displayedProblem} profile={p} />
-            )}
-            <TranslateButton
-              sourceText={question.displayedProblem}
-              profile={p}
-              autoTranslate={assistLevel === 'novice'}
-            />
-          </>
-        )}
-      </div>
-
-      {/* Your answer — blankForm with the picked answers dropped into the blanks. */}
-      <div style={{ ...card, textAlign: 'center' }}>
-        <p style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0 0 0.75rem', color: p.contrastTextColor }}>
-          Your answer
-        </p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem 0.5rem', justifyContent: 'center', alignItems: 'center', fontSize: '1.2rem', fontWeight: 700, color: p.contrastTextColor }}>
-          {pieces.map((piece, i) => {
-            if (piece.kind === 'filled') {
-              return (
-                <span
-                  key={i}
-                  style={{
-                    background: p.cardBackground,
-                    color: p.cardTextColor,
-                    borderRadius: '0.4rem',
-                    padding: '0.1rem 0.55rem',
-                    fontWeight: 700,
-                  }}
-                >
-                  {piece.value}
-                </span>
-              );
-            }
-            if (piece.kind === 'empty') {
-              return (
-                <span key={i} style={{ opacity: 0.6, letterSpacing: '0.1em' }}>
-                  ____
-                </span>
-              );
-            }
-            return <span key={i}>{piece.value}</span>;
-          })}
-        </div>
-      </div>
-
-      {/* Option-button palette (reusable — not disabled until solved). */}
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '0.65rem',
-          justifyContent: 'center',
-          maxWidth: '760px',
-          margin: '1rem auto',
-        }}
+    <>
+      <QuestionCard instruction={question.writtenPrompt || 'Use the blocks below to form the written form of the expression:'} text={question.displayedProblem} profile={p} />
+      <AnswerPanel
+        onClear={handleClear} onCheck={handleCheck} clearDisabled={actionsDisabled} checkDisabled={actionsDisabled}
+        feedback={<AnswerFeedback outcome={result} wasCleanCorrect={!base.hadMistake} profile={p}
+          wrongMessage="Try again — that isn’t quite right." incompleteMessage="Fill in all the blanks first." />}
       >
-        {question.optionList.map((option, i) => (
-          <button key={i} onClick={() => handleSelect(option)} disabled={locked} style={optionButton(locked)}>
-            {option}
-          </button>
-        ))}
-      </div>
-
-      {/* Actions. */}
-      <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', marginTop: '0.5rem' }}>
-        <button onClick={handleCheck} disabled={actionsDisabled} style={actionButton(p.checkAnswerButtonColor, actionsDisabled)}>
-          Check Answer
-        </button>
-        <button onClick={handleClear} disabled={actionsDisabled} style={actionButton(p.clearAnswerButtonColor, actionsDisabled)}>
-          Clear
-        </button>
-      </div>
-
-      {/* Feedback. */}
-      <AnswerFeedback
-        outcome={result}
-        wasCleanCorrect={!base.hadMistake}
-        profile={p}
-        wrongMessage="Try again — that isn’t quite right."
-        incompleteMessage="Fill in all the blanks first."
-        correctAnswer={question.multiAcceptedAnswers.toString()}
-      />
-    </section>
+        <div className={styles.answerArea} aria-label="Your answer" aria-live="polite">
+          <p>
+            {pieces.map((piece, i) => (
+              <span key={i}>
+                <span className={piece.kind === 'empty' ? styles.blank : piece.kind === 'filled' ? styles.filledBlank : undefined}>{piece.value}</span>{' '}
+              </span>
+            ))}
+          </p>
+        </div>
+        <WordChoices options={question.optionList} locked={locked} onSelect={(index) => handleSelect(question.optionList[index])} />
+      </AnswerPanel>
+    </>
   );
 }

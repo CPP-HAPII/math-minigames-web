@@ -11,8 +11,6 @@ interface AnswerFeedbackProps {
   wrongMessage: string;
   /** Shown for outcome === 'incomplete' — only Jumble/FillBlanks/Playback have that state. */
   incompleteMessage?: string;
-  /** Shown for outcome === 'wrong' */
-  correctAnswer: string;
 }
 
 /** Fixed burst offsets (no Math.random() — see useGameBase.ts's Date.now() precedent for why this codebase avoids impure calls during render). */
@@ -56,14 +54,13 @@ export default function AnswerFeedback({
   profile: p,
   wrongMessage,
   incompleteMessage,
-  correctAnswer,
 }: AnswerFeedbackProps) {
   if (!outcome) return null;
 
   if (outcome === 'incomplete') {
     if (!incompleteMessage) return null;
     return (
-      <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '1.1rem', fontWeight: 700, color: p.clearAnswerButtonColor }}>
+      <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '1.1rem', fontWeight: 700, color: p.homeInk }}>
         {incompleteMessage}
       </p>
     );
@@ -71,8 +68,8 @@ export default function AnswerFeedback({
 
   if (outcome === 'wrong') {
     return (
-      <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '1.1rem', fontWeight: 700, color: p.clearAnswerButtonColor }}>
-        {correctAnswer}
+      <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '1.1rem', fontWeight: 700, color: p.homeInk }}>
+        {wrongMessage}
       </p>
     );
   }
@@ -120,7 +117,7 @@ export default function AnswerFeedback({
           position: 'relative',
           fontSize: '1.1rem',
           fontWeight: 700,
-          color: p.checkAnswerButtonColor,
+          color: p.homeInk,
           animation: 'feedback-pop 300ms ease-out',
         }}
       >

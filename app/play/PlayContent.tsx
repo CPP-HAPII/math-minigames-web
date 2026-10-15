@@ -18,7 +18,9 @@ import TypingGame from '@/components/games/TypingGame';
 import FillBlanksGame from '@/components/games/FillBlanksGame';
 import PlaybackGame from '@/components/games/PlaybackGame';
 import ReadAloudGame from '@/components/games/ReadAloudGame';
-import Calculator from '@/components/Calculator';
+import SettingsMenu from '@/components/SettingsMenu';
+import TaskLayout from '@/components/games/TaskLayout';
+import styles from '@/components/games/TaskLayout.module.css';
 import ProgressBar from '@/components/ProgressBar';
 
 /** How long the "✓ Correct!" / feedback state stays on screen before the series advances. */
@@ -267,8 +269,7 @@ export default function PlayContent() {
   // ── Styles ───────────────────────────────────────────────────────────────────
   // "panelCard" mirrors the white/dark surface-card look used throughout the
   // redesigned home screen (LevelGrid, ContinueBanner) — used here for the
-  // page chrome (results screen, progress wrapper), not the individual game
-  // cards, which keep their own already-theme-correct styling.
+  // results and retry screens. The active task uses TaskLayout instead.
   const panelCard: React.CSSProperties = {
     backgroundColor: p.homeSurfaceBackground,
     border: `1px solid ${p.homeBorder}`,
@@ -502,61 +503,36 @@ export default function PlayContent() {
   }
 
   // ── Playing ──────────────────────────────────────────────────────────────────
-  // Pill badge for the header bar — same translucent-pill treatment the home
-  // screen uses for its theme-switcher buttons, so it stays readable against
-  // any of the three homeHeaderBackground gradients.
-  const headerPill: React.CSSProperties = {
-    fontFamily: 'var(--font-nunito), sans-serif',
-    fontWeight: 700,
-    fontSize: '13px',
-    padding: '8px 14px',
-    borderRadius: '999px',
-    border: `1.5px solid ${p.homeThemeButtonInactiveBorder}`,
-    background: p.homeThemeButtonInactiveBackground,
-    color: p.homeThemeButtonInactiveColor,
-  };
   const retrying = currentIndex >= originalQuestionCount;
 
   return (
-    <main style={{ minHeight: '100vh', background: p.homePageBackground, color: p.textColor }}>
-      <header
-        style={{
-          background: p.homeHeaderBackground,
-          borderBottom: p.homeHeaderBorderBottom || undefined,
-          padding: '18px 34px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '0.6rem',
-        }}
-      >
-        <span
-          style={{
-            fontFamily: p.homeWelcomeFont,
-            fontWeight: p.homeWelcomeGradient ? 700 : 800,
-            fontSize: p.homeWelcomeGradient ? '22px' : '19px',
-            color: p.homeWelcomeGradient ? 'transparent' : p.homeWelcomeColor,
-            background: p.homeWelcomeGradient || undefined,
-            backgroundClip: p.homeWelcomeGradient ? 'text' : undefined,
-            WebkitBackgroundClip: p.homeWelcomeGradient ? 'text' : undefined,
-          }}
-        >
+    <main className={styles.page} style={{ background: p.homePageBackground, color: p.homeInk }}>
+      <header className={styles.header} style={{ background: p.homeHeaderBackground, borderBottom: p.homeHeaderBorderBottom || undefined }}>
+        <h1 className={styles.headerTitle} style={{
+          fontFamily: p.homeWelcomeFont,
+          fontWeight: p.homeWelcomeGradient ? 700 : 800,
+          color: p.homeWelcomeGradient ? 'transparent' : p.homeWelcomeColor,
+          background: p.homeWelcomeGradient || undefined,
+          backgroundClip: p.homeWelcomeGradient ? 'text' : undefined,
+          WebkitBackgroundClip: p.homeWelcomeGradient ? 'text' : undefined,
+        }}>
           {sublevelLabel}
-        </span>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={headerPill}>Question {currentIndex + 1} / {questions.length}</span>
-          {retrying && <span style={headerPill}>Retrying missed questions</span>}
-          <span style={headerPill}>Score: {score}</span>
-          <Calculator profile={p} />
-        </div>
+        </h1>
+        <SettingsMenu profile={p} hydrated={hydrated} />
       </header>
 
-      <div style={{ ...panelCard, padding: '0.6rem 1.5rem' }}>
-        <ProgressBar progress={progress} profile={p} />
+      <div className={styles.content}>
+        <div className={styles.progressRow}>
+          <p className={styles.questionCount}>Question {currentIndex + 1} / {questions.length}</p>
+          <div className={styles.progressTrack}><ProgressBar progress={progress} profile={p} /></div>
+        </div>
+        {retrying && <p className={styles.retryNotice}>Retrying missed questions</p>}
+        {currentQuestion && (
+          <TaskLayout question={currentQuestion} questionIndex={currentIndex} assistLevel={hydrated ? assistLevel : 'novice'} profile={p}>
+            {gameElement}
+          </TaskLayout>
+        )}
       </div>
-
-      {gameElement}
     </main>
   );
 }
