@@ -74,7 +74,7 @@ export default function Calculator({ profile: p }: CalculatorProps) {
     border: 'none',
     borderRadius: '0.5rem',
     padding: '0.45rem 0.85rem',
-    fontSize: '0.85rem',
+    fontSize: '10rem',
     fontWeight: 700,
     cursor: 'pointer',
   };
@@ -117,7 +117,7 @@ export default function Calculator({ profile: p }: CalculatorProps) {
   return (
     <>
       <button onClick={() => setIsOpen(true)} style={toggleButton} title="Click to use a calculator">
-        🧮 Calc Result: {lastResult}
+        📱
       </button>
 
       {isOpen && (

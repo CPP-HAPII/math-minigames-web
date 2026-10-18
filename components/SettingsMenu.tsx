@@ -50,19 +50,19 @@ export default function SettingsMenu({ profile: p, hydrated }: { profile: ColorP
   // Both sections use the same accessible radio-option layout.
   const groups = [
     {
-      id: 'assist', name: 'home-assist-mode', title: 'Language Assist',
-      help: 'These modes change language support during games.',
-      options: ASSIST_LEVELS.map(({ key, label, description }) => ({
-        value: key, label, description, selected: activeLevel === key,
-        onChange: () => setLevel(key),
-      })),
-    },
-    {
       id: 'palette', name: 'home-color-palette', title: 'Color palette',
       help: 'Applies to the level overview and games.',
       options: themes.map((theme, index) => ({
         value: index, label: theme.homeLabel, description: '', selected: activeThemeIndex === index,
         onChange: () => setTheme(index),
+      })),
+    },
+    {
+      id: 'assist', name: 'home-assist-mode', title: 'Language Assist',
+      help: 'These modes change language support during games.',
+      options: ASSIST_LEVELS.map(({ key, label, description }) => ({
+        value: key, label, description, selected: activeLevel === key,
+        onChange: () => setLevel(key),
       })),
     },
   ];
