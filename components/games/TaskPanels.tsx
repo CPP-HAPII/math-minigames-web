@@ -17,9 +17,15 @@ interface QuestionCardProps {
 export function QuestionCard({ instruction, text, profile, children }: QuestionCardProps) {
   const hydrated = useHydrated();
   const hoverEnabled = useAssistStore((s) => s.hoverTranslationEnabled);
+  const mascot = profile.mascotImage;
 
   return (
-    <section className={styles.questionCard} aria-label="Question">
+    <section className={`${styles.questionCard} ${mascot ? styles.hasMascot : ''}`} aria-label="Question">
+      {mascot && (
+        // Decorative only, so it's hidden from screen readers.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={mascot} alt="" aria-hidden="true" className={styles.mascot} />
+      )}
       <h2 className={styles.instruction}>{instruction}</h2>
       {text && (
         <HoverTranslatedText

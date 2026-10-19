@@ -59,6 +59,27 @@
   text-align: center;
 }
 
+/* Coach mascot standing in the question card's bottom-right corner. */
+.questionCard { position: relative; }
+.hasMascot {
+  --mascot-h: clamp(170px, 16vw, 220px);
+  box-sizing: border-box;
+  /* Card is slightly shorter than the mascot, so his head pokes over the top edge like the mockup. */
+  min-height: calc(var(--mascot-h) - 16px);
+  /* Keeps the question text from running under him (mascots are about 0.63 as wide as tall). */
+  padding-right: calc(var(--mascot-h) * 0.63 + 20px);
+}
+.mascot {
+  position: absolute;
+  right: 12px;
+  bottom: 0;
+  height: var(--mascot-h);
+  width: auto;
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.12));
+}
+
 .answerArea p { margin: 0; }
 .selectedWord { padding: 5px 10px; border-radius: 8px; background: var(--task-panel); font-weight: 800; }
 .blank { display: inline-block; min-width: 72px; border-bottom: 2px solid var(--task-ink); }
@@ -126,4 +147,5 @@
   .questionCount { font-size: 0.9rem; }
   .actions > button { flex: 1 1 100%; }
   .wordButton { padding: 10px 12px; }
+  .hasMascot { --mascot-h: 120px; }
 }

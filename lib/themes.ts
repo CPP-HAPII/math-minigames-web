@@ -73,6 +73,10 @@ export interface ColorProfile {
   homeThemeButtonInactiveColor: string;
   homeThemeButtonInactiveBorder: string;
   homeThemeButtonInactiveBackground: string;
+
+  /** Coach mascot shown in the question card's corner; '' for none. */
+  mascotImage: string;
+
   /** Per-level badge/name accent, indexed 0-4 for levels 1-5. */
   homeLevelPalette: [HomeLevelAccent, HomeLevelAccent, HomeLevelAccent, HomeLevelAccent, HomeLevelAccent];
 }
@@ -87,6 +91,7 @@ const BASE_LEVEL_PALETTE: [HomeLevelAccent, HomeLevelAccent, HomeLevelAccent, Ho
 
 export const SCUTheme: ColorProfile = {
 idKey: 'SCU flavor',
+mascotImage: '/bucky-mascot.png',
 
 backgroundColor: '#fefefd',
 headerColor: '#a20110',
@@ -139,6 +144,7 @@ homeLevelPalette: [
 
 export const CPPTheme: ColorProfile = {
 idKey: 'CPP flavor',
+mascotImage: '/billy-mascot.png',
 
 backgroundColor: '#fcfcfc',
 headerColor: '#114725',
