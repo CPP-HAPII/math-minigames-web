@@ -39,9 +39,10 @@ export default function TaskLayout({ question, questionIndex, assistLevel, profi
           question={question} assistLevel={assistLevel}
         />
         <details className={styles.assistCard} open>
-          <summary><h2>Math Assist</h2></summary>
-          {/* Keep the calculator mounted between questions so its result is retained. */}
-          <div className={styles.calculator} style={{ background: p.homeHeaderBackground, color: p.homeThemeButtonInactiveColor }}>
+          <summary><h2><span className={styles.assistIcon} aria-hidden="true"><CalculatorIcon /></span>Math Assist</h2></summary>
+          {/* Keep the calculator mounted between questions so its result is retained.
+              The panel's purple tint comes from .calculator in TaskLayout.module.css. */}
+          <div className={styles.calculator}>
             <Calculator profile={p} />
           </div>
         </details>
@@ -62,7 +63,7 @@ function LanguageAssist({ question, assistLevel }: Pick<TaskLayoutProps, 'questi
 
   return (
     <details className={styles.assistCard} open>
-      <summary><h2>Language Assist</h2></summary>
+      <summary><h2><span className={styles.assistIcon} aria-hidden="true"><GlobeIcon /></span>Language Assist</h2></summary>
       <div className={styles.assistBody}>
         {assistLevel !== 'advanced' && (
           <TranslationTools text={sourceText} autoTranslate={assistLevel === 'novice'} speakOriginal={!isPlayback && assistLevel === 'novice'} />
@@ -99,6 +100,25 @@ function TranslationTools({ text, autoTranslate, speakOriginal }: { text: string
         <button type="button" className={styles.assistButton} onClick={speakTranslation}>Speak translated question</button>
       )}
     </>
+  );
+}
+
+// Icons for the gradient badges beside each assist heading.
+function GlobeIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" focusable="false">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3Z" />
+    </svg>
+  );
+}
+
+function CalculatorIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" focusable="false">
+      <rect x="5" y="2.5" width="14" height="19" rx="2.5" />
+      <path d="M8.5 6.5h7M8.5 11h.01M12 11h.01M15.5 11h.01M8.5 14.5h.01M12 14.5h.01M15.5 14.5h.01M8.5 18h.01M12 18h.01M15.5 18h.01" />
+    </svg>
   );
 }
 

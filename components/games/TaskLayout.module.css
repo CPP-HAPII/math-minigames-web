@@ -138,6 +138,143 @@
 .hoverToggle input { width: 20px; height: 20px; margin: 0; accent-color: var(--task-ink); flex-shrink: 0; }
 .calculator { display: flex; justify-content: center; flex-wrap: wrap; margin-top: 18px; padding: 22px 12px; border-radius: 12px; }
 
+/* ── Gradient + rolling hills on the question and answer cards ──
+   Kept after the base card/input rules so these backgrounds win. */
+.questionCard,
+.answerCard {
+  position: relative;
+  isolation: isolate; /* lets the hills sit behind the card's content without z-index on every child */
+}
+
+/* Fade from white at the top into the theme's light tint at the bottom. */
+.questionCard {
+  background: linear-gradient(
+    to bottom,
+    var(--task-surface) 45%,
+    color-mix(in srgb, var(--task-panel) 55%, var(--task-surface))
+  );
+}
+.answerCard {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--task-panel) 35%, var(--task-surface)),
+    var(--task-panel)
+  );
+}
+
+/* Two hill layers: a lighter, taller back hill and a deeper front hill. */
+.questionCard::before,
+.questionCard::after,
+.answerCard::before,
+.answerCard::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  border-radius: 0 0 16px 16px; /* card radius (18px) minus its 2px border */
+  pointer-events: none;
+  -webkit-mask: var(--hill) bottom / 100% 100% no-repeat;
+  mask: var(--hill) bottom / 100% 100% no-repeat;
+}
+.questionCard::before,
+.answerCard::before {
+  height: clamp(56px, 32%, 96px);
+  background: color-mix(in srgb, var(--task-panel) 75%, var(--task-surface));
+  --hill: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 100' preserveAspectRatio='none'%3E%3Cpath d='M0 45C180 10 360 12 560 42S960 78 1200 30V100H0Z'/%3E%3C/svg%3E");
+}
+.questionCard::after,
+.answerCard::after {
+  height: clamp(40px, 22%, 70px);
+  background: color-mix(in srgb, var(--task-accent) 14%, var(--task-panel));
+  --hill: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 100' preserveAspectRatio='none'%3E%3Cpath d='M0 60C240 30 470 88 720 60S1060 28 1200 52V100H0Z'/%3E%3C/svg%3E");
+}
+
+/* A softer version inside the dashed drop zone and the typing box. */
+.answerArea,
+.textInput {
+  background: linear-gradient(
+    to bottom,
+    var(--task-surface) 50%,
+    color-mix(in srgb, var(--task-panel) 50%, var(--task-surface))
+  );
+}
+
+/* ── Assist column: purple/pink look (same for every coach, like the mockup) ── */
+.assistColumn {
+  --assist-pink: #ff4fbf;
+  --assist-purple: #8b5cf6;
+  --assist-gold: #ffc94d;
+  --assist-ink: #3b2a8f;       /* button and body text */
+  --assist-title: #24124f;     /* card headings */
+  --assist-line: #e6dcff;      /* button borders */
+  --assist-tint: #f1ebff;      /* translation box, calculator panel */
+}
+.assistCard {
+  color: var(--assist-ink);
+  border: 2px solid transparent;
+  /* Inner fill: blush header band fading to white. Outer: gradient border. */
+  background:
+    linear-gradient(to bottom, #fde7f7 0, #f0e8ff 64px, #ffffff 112px) padding-box,
+    linear-gradient(135deg, var(--assist-pink), var(--assist-purple) 55%, var(--assist-gold)) border-box;
+  box-shadow: 0 6px 18px rgba(139, 92, 246, 0.12);
+}
+.assistCard h2 { display: flex; align-items: center; gap: 12px; color: var(--assist-title); }
+.assistCard summary::after { color: var(--assist-purple); }
+.assistIcon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--assist-pink), var(--assist-purple));
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(139, 92, 246, 0.3);
+}
+.assistButton {
+  border-color: var(--assist-line);
+  background: #ffffff;
+  color: var(--assist-ink);
+}
+.assistColumn button:not(:disabled):hover { outline-color: var(--assist-purple); }
+.assistColumn button:focus-visible,
+.assistColumn input:focus-visible,
+.assistColumn summary:focus-visible { outline-color: var(--assist-purple); }
+.translation { background: var(--assist-tint); color: var(--assist-ink); }
+.assistColumn .help { color: #6b5aa6; }
+
+/* Word-translation checkbox drawn as a toggle switch, on the right like the mockup. */
+.hoverToggle { flex-direction: row-reverse; justify-content: space-between; }
+.hoverToggle input {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  width: 46px;
+  height: 26px;
+  border-radius: 999px;
+  background: #d8d2e6;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.hoverToggle input::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s;
+}
+.hoverToggle input:checked { background: linear-gradient(135deg, var(--assist-pink), var(--assist-purple)); }
+.hoverToggle input:checked::before { transform: translateX(20px); }
+
+.calculator { background: var(--assist-tint); }
+
 @media (max-width: 840px) {
   .layout { grid-template-columns: minmax(0, 1fr); }
   .progressRow { gap: 12px; }

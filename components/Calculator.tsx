@@ -69,7 +69,7 @@ export default function Calculator({ profile: p }: CalculatorProps) {
   // Toggle button uses the same gradient as the play-page question cards, so
   // it reads as "part of the question" rather than a random header pill.
   const toggleButton: React.CSSProperties = {
-    background: p.homeAccentGradient,
+    background: 'transparent',
     color: p.contrastTextColor,
     border: 'none',
     borderRadius: '0.5rem',
