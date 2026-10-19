@@ -18,7 +18,7 @@ import TypingGame from '@/components/games/TypingGame';
 import FillBlanksGame from '@/components/games/FillBlanksGame';
 import PlaybackGame from '@/components/games/PlaybackGame';
 import ReadAloudGame from '@/components/games/ReadAloudGame';
-import SettingsMenu from '@/components/SettingsMenu';
+import { CoachHeader } from '@/components/SettingsMenu';
 import TaskLayout from '@/components/games/TaskLayout';
 import styles from '@/components/games/TaskLayout.module.css';
 import ProgressBar from '@/components/ProgressBar';
@@ -507,19 +507,9 @@ export default function PlayContent() {
 
   return (
     <main className={styles.page} style={{ background: p.homePageBackground, color: p.homeInk }}>
-      <header className={styles.header} style={{ background: p.homeHeaderBackground, borderBottom: p.homeHeaderBorderBottom || undefined }}>
-        <h1 className={styles.headerTitle} style={{
-          fontFamily: p.homeWelcomeFont,
-          fontWeight: p.homeWelcomeGradient ? 700 : 800,
-          color: p.homeWelcomeGradient ? 'transparent' : p.homeWelcomeColor,
-          background: p.homeWelcomeGradient || undefined,
-          backgroundClip: p.homeWelcomeGradient ? 'text' : undefined,
-          WebkitBackgroundClip: p.homeWelcomeGradient ? 'text' : undefined,
-        }}>
-          {sublevelLabel}
-        </h1>
-        <SettingsMenu profile={p} hydrated={hydrated} />
-      </header>
+      <CoachHeader profile={p} hydrated={hydrated}>
+        {sublevelLabel}
+      </CoachHeader>
 
       <div className={styles.content}>
         <div className={styles.progressRow}>

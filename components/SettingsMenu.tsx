@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { useAssistStore } from '@/lib/stores/assistStore';
 import { useThemeStore } from '@/lib/stores/themeStore';
 import { themes, type ColorProfile } from '@/lib/themes';
@@ -34,7 +34,7 @@ export default function SettingsMenu({ profile: p, hydrated }: { profile: ColorP
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const activeLevel = hydrated ? level : 'novice';
-  const activeThemeIndex = hydrated ? themeIndex : 0;
+  const activeThemeIndex = hydrated && themes[themeIndex] ? themeIndex : 0;
 
   function openSettings() {
     if (!dialogRef.current || dialogRef.current.open) return;
@@ -47,11 +47,11 @@ export default function SettingsMenu({ profile: p, hydrated }: { profile: ColorP
     dialogRef.current?.close();
   }
 
-  // Both sections use the same accessible radio-option layout.
+  // Coach selection and language support share the same radio-option layout.
   const groups = [
     {
-      id: 'palette', name: 'home-color-palette', title: 'Color palette',
-      help: 'Applies to the level overview and games.',
+      id: 'coach', name: 'home-coach', title: 'Coach',
+      help: 'Your coach sets the school colors and banners.',
       options: themes.map((theme, index) => ({
         value: index, label: theme.homeLabel, description: '', selected: activeThemeIndex === index,
         onChange: () => setTheme(index),
@@ -72,7 +72,7 @@ export default function SettingsMenu({ profile: p, hydrated }: { profile: ColorP
       <button
         ref={triggerRef} className="settings-trigger" type="button" onClick={openSettings}
         aria-label="Settings" aria-haspopup="dialog" aria-expanded={open} aria-controls="home-settings"
-        style={{ color: p.homeWelcomeColor || p.homeInk }}
+        style={{ color: p.headerColor, background: p.contrastTextColor, borderRadius: '50%' }}
       >
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
           <path d="M9.7 4.3 10.2 2h3.6l.5 2.3 1.8 1 2.3-.7 1.8 3.1-1.7 1.6v2.1l1.7 1.6-1.8 3.1-2.3-.7-1.8 1-.5 2.3h-3.6l-.5-2.3-1.8-1-2.3.7L3.8 13l1.7-1.6V9.3L3.8 7.7l1.8-3.1 2.3.7 1.8-1Z" transform="translate(0 1.65)" />
@@ -103,7 +103,7 @@ export default function SettingsMenu({ profile: p, hydrated }: { profile: ColorP
             </svg>
           </button>
         </div>
-        <p id="home-settings-description" className="settings-description">Choose the support and colors that work for you.</p>
+        <p id="home-settings-description" className="settings-description">Choose your coach and language support.</p>
 
         {groups.map(({ id, name, title, help, options }) => (
           <fieldset key={id} className={`settings-group ${id}`}>
@@ -188,11 +188,11 @@ export default function SettingsMenu({ profile: p, hydrated }: { profile: ColorP
         }
         .option-title { display: block; font-size: 15px; font-weight: 800; line-height: 1.4; }
         .option-description { display: block; margin-top: 3px; color: ${p.homeInkSoft}; font-size: 13px; line-height: 1.45; }
-        .palette .options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-        .palette .settings-option { display: flex; align-items: center; min-height: 44px; padding: 10px 8px; }
-        .palette .option-content { gap: 6px; }
-        .palette .option-title { font-size: 13px; }
-        .palette input { width: 16px; height: 16px; margin-top: 1px; }
+        .coach .options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .coach .settings-option { display: flex; align-items: center; min-height: 44px; padding: 10px 8px; }
+        .coach .option-content { gap: 6px; }
+        .coach .option-title { font-size: 13px; }
+        .coach input { width: 16px; height: 16px; margin-top: 1px; }
         .settings-footer { border-top: 1px solid ${p.homeBorder}; padding-top: 18px; margin-top: 24px; }
         .settings-footer p { font-size: 12px; }
         .settings-done { border: 0; border-radius: 999px; padding: 12px 24px; min-height: 44px; font: inherit; font-weight: 800; cursor: pointer; }
@@ -200,12 +200,70 @@ export default function SettingsMenu({ profile: p, hydrated }: { profile: ColorP
         /* Small screens */
         @media (max-width: 380px) {
           .settings-dialog { padding: 18px; }
-          .palette .options { grid-template-columns: 1fr; }
+          .coach .options { grid-template-columns: 1fr; }
         }
         @media (max-height: 640px) {
           .settings-dialog { top: 12px; max-height: calc(100dvh - 24px); }
         }
       `}</style>
     </>
+  );
+}
+
+// Shared banner for the level overview and the current question.
+export function CoachHeader({ profile: p, hydrated, children }: {
+  profile: ColorProfile;
+  hydrated: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <header className="coach-header" style={{
+      background: p.homeHeaderBackground,
+      borderBottom: p.homeHeaderBorderBottom || undefined,
+    }}>
+      <h1 style={{ fontFamily: p.homeWelcomeFont, color: p.homeWelcomeColor || p.contrastTextColor }}>
+        {children}
+      </h1>
+      <div className="coach-settings">
+        <SettingsMenu profile={p} hydrated={hydrated} />
+      </div>
+<style jsx>{`
+  .coach-header {
+    position: relative;
+    overflow: hidden;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(120px, 18vw, 260px) 44px;
+    align-items: center;
+    gap: 16px;
+    min-height: 92px;
+    padding: 18px clamp(16px, 3vw, 34px);
+  }
+.coach-header::before {
+  content: '';
+  position: absolute;
+  right: calc(clamp(16px, 3vw, 34px) + 60px); /* header padding + gear (44px) + gap (16px) */
+  bottom: ${p.homeHeaderImageOffset || '0'};
+  height: ${p.homeHeaderImageHeight || '100%'};
+  aspect-ratio: 3 / 1;
+  background: ${p.homeHeaderImage ? `url("${p.homeHeaderImage}")` : 'none'} right bottom / cover no-repeat;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 40%, #000 88%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 40%, #000 88%, transparent);
+  pointer-events: none;
+}
+  h1, .coach-settings { position: relative; z-index: 1; }
+  h1 { margin: 0; font-size: clamp(1.2rem, 2vw, 1.65rem); font-weight: 800; line-height: 1.3; overflow-wrap: anywhere; }
+  .coach-settings { grid-column: 3; align-self: center; }
+  @media (max-width: 760px) {
+    .coach-header {
+      grid-template-columns: minmax(0, 1fr) 44px;
+      min-height: 76px;
+      padding: 14px 16px;
+    }
+    .coach-settings { grid-column: 2; }
+    .coach-header::before { opacity: 0.5; } /* keep the title readable over the art */
+  }
+`}</style>
+    </header>
   );
 }

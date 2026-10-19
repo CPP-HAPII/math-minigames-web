@@ -20,11 +20,16 @@ function SettingsIcon() {
       height="28"
       viewBox="0 0 24 24"
       fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
     >
       <path
-        d="M19.43 12.98c.04-.32.07-.65.07-.98s-.02-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.37-.31-.6-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98L14.5 2.42C14.47 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.5.42L9.12 5.07c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.08-.48 0-.6.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.08.65-.08.98s.03.66.08.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.37.31.6.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.38-2.65c.61-.25 1.17-.58 1.69-.98l2.49 1c.23.08.48 0 .6-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z"
-        fill="currentColor"
+        d="M9.7 4.3 10.2 2h3.6l.5 2.3 1.8 1 2.3-.7 1.8 3.1-1.7 1.6v2.1l1.7 1.6-1.8 3.1-2.3-.7-1.8 1-.5 2.3h-3.6l-.5-2.3-1.8-1-2.3.7L3.8 13l1.7-1.6V9.3L3.8 7.7l1.8-3.1 2.3.7 1.8-1Z"
+        transform="translate(0 1.65)"
       />
+      <circle cx="12" cy="12" r="3" />
     </svg>
   );
 }
@@ -61,6 +66,10 @@ export default function LoginPage() {
     border: 0,
   };
 
+  // Shared by both edges of the banner art: fades the hills into the header
+  // gradient on the left and keeps a soft edge next to the gear on the right.
+  const bannerMask = 'linear-gradient(to right, transparent, #000 40%, #000 88%, transparent)';
+
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const msg = validate(userId);
@@ -95,7 +104,9 @@ export default function LoginPage() {
           width: '100%',
           background: p.homeHeaderBackground,
           borderBottom: p.homeHeaderBorderBottom || undefined,
-          minHeight: settingsOpen ? '144px' : '92px',
+          // Fixed height so the banner art doesn't rescale when settings opens;
+          // the dropdown is absolutely positioned and overlays the page below.
+          minHeight: '92px',
           boxSizing: 'border-box',
           padding: '18px clamp(12px, 2vw, 28px)',
           display: 'grid',
@@ -105,8 +116,33 @@ export default function LoginPage() {
           alignItems: 'center',
         }}
       >
+        {/* Banner art: same theme fields and fades as CoachHeader. The wrapper
+            clips the art instead of the header, so the settings dropdown can
+            still hang below the header without being cut off. */}
+        <div
+          aria-hidden="true"
+          style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}
+        >
+          {p.homeHeaderImage && (
+            <div
+              style={{
+                position: 'absolute',
+                right: 'calc(clamp(12px, 2vw, 28px) + 56px)', // header padding + gear (44px) + gap
+                bottom: p.homeHeaderImageOffset || 0,
+                height: p.homeHeaderImageHeight || '100%',
+                aspectRatio: '3 / 1', // banner PNGs are 2172×724
+                background: `url("${p.homeHeaderImage}") right bottom / cover no-repeat`,
+                WebkitMaskImage: bannerMask,
+                maskImage: bannerMask,
+              }}
+            />
+          )}
+        </div>
+
         <p
           style={{
+            position: 'relative',
+            zIndex: 1,
             gridColumn: 2,
             gridRow: 1,
             minWidth: 0,
@@ -133,8 +169,9 @@ export default function LoginPage() {
             gridColumn: 3,
             gridRow: 1,
             position: 'relative',
+            zIndex: 1,
             justifySelf: 'end',
-            alignSelf: settingsOpen ? 'start' : 'center',
+            alignSelf: 'center',
           }}
         >
           <button
@@ -151,8 +188,8 @@ export default function LoginPage() {
               width: '44px',
               height: '44px',
               boxSizing: 'border-box',
-              color: p.homeWelcomeColor || p.homeInk,
-              background: 'transparent',
+              color: p.headerColor,
+              background: p.homeSurfaceBackground,
               border: 'none',
               borderRadius: '999px',
               padding: '6px',

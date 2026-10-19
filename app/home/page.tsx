@@ -10,7 +10,7 @@ import { useGameDataStore } from '@/lib/stores/gameDataStore';
 import { fetchStudentQuestionRows, type QuestionAttemptRow } from '@/lib/services/analyticsDataService';
 import { computeLockedContinueTarget, computeSublevelLockInfo } from '@/lib/services/progressService';
 import { LEVEL_MAP, SUBLEVEL_MAP } from '@/lib/levelMap';
-import SettingsMenu from '@/components/SettingsMenu';
+import { CoachHeader } from '@/components/SettingsMenu';
 import ContinueBanner from '@/components/home/ContinueBanner';
 import LevelGrid, { type LevelCardData } from '@/components/home/LevelGrid';
 import type { AnyGameData } from '@/lib/types';
@@ -128,34 +128,9 @@ const levelCards: LevelCardData[] = useMemo(
       }}
     >
       {/* ── Header ─────────────────────────────────────────────────────── */}
-      <header
-        style={{
-          background: p.homeHeaderBackground,
-          borderBottom: p.homeHeaderBorderBottom || undefined,
-          padding: '22px clamp(16px, 3vw, 34px)',
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1fr) 44px',
-          alignItems: 'center',
-          gap: '0.75rem',
-        }}
-      >
-        <p
-          style={{
-            fontFamily: p.homeWelcomeFont,
-            fontWeight: p.homeWelcomeGradient ? 700 : 800,
-            fontSize: p.homeWelcomeGradient ? '32px' : '26px',
-            margin: 0,
-            color: p.homeWelcomeGradient ? 'transparent' : p.homeWelcomeColor,
-            background: p.homeWelcomeGradient || undefined,
-            backgroundClip: p.homeWelcomeGradient ? 'text' : undefined,
-            WebkitBackgroundClip: p.homeWelcomeGradient ? 'text' : undefined,
-          }}
-        >
-          Welcome, {hydrated ? (userId || 'Student') : '…'}!
-        </p>
-
-        <SettingsMenu profile={p} hydrated={hydrated} />
-      </header>
+      <CoachHeader profile={p} hydrated={hydrated}>
+        Welcome, {hydrated ? (userId || 'Student') : '…'}!
+      </CoachHeader>
 
       <div style={{ maxWidth: '980px', margin: '0 auto', padding: '28px 30px 60px' }}>
         {/* ── Continue ─────────────────────────────────────────────────── */}

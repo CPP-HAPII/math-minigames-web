@@ -1,12 +1,5 @@
-// Core gameplay colors are ported from constants.dart (see git history for the
-// original 4-theme Flutter mapping). The redesigned home screen (see
-// mathminigames_redesign_mockup_v2.html) introduced a distinct 3-theme system
-// (Green / Hapii / Dark green); this file now carries both: the original
-// flat gameplay palette (used by PlayContent + components/games/*) and the
-// richer "home*" fields the redesigned home screen needs (gradients, panel/
-// card colors, per-level accents). Kept as ONE profile per theme, rather than
-// two parallel arrays, so there is never a risk of the two halves drifting
-// out of sync under the same persisted themeIndex.
+// Shared colors and school banners for the two coaches: Bucky and Billy.
+// Keep the existing themes export and persisted themeIndex API.
 
 export interface HomeLevelAccent {
   accent: string;
@@ -39,12 +32,19 @@ export interface ColorProfile {
   cardTextColor: string;
 
   // ── Home-screen fields (app/home/page.tsx, components/home/*) ──
-  /** Label shown on this theme's button in the switcher, e.g. 'Dark green'. */
+  /** Coach name shown in Settings. */
   homeLabel: string;
   /** CSS `background` value (solid or gradient) for the page root. */
   homePageBackground: string;
   /** CSS `background` value for the header bar. */
   homeHeaderBackground: string;
+  /** Banner artwork drawn on the right side of the coach header; '' for none. */
+  homeHeaderImage: string;
+  
+  /** Banner art height relative to the header, e.g. '220%'. Bigger = larger mission. */
+  homeHeaderImageHeight: string;
+  /** Bottom offset for the banner art, e.g. '-25%'. More negative = more ground hidden below the header. */
+  homeHeaderImageOffset: string;
   /** CSS `border-bottom` value for the header bar; '' when none. */
   homeHeaderBorderBottom: string;
   /** Solid welcome-heading text color; '' when homeWelcomeGradient is used instead. */
@@ -101,9 +101,13 @@ disabledButtonColor: '#888888',
 cardBackground: '#a20110',
 cardTextColor: '#fefefd',
 
+homeHeaderImageHeight: '220%',
+homeHeaderImageOffset: '-25%',
+
 homeLabel: 'Bucky the Bronco',
 homePageBackground: '#fefefd',
-homeHeaderBackground: '#a20110',
+homeHeaderBackground: 'linear-gradient(to bottom, #9a0016 0%, #d8001f 70%, #8a0012 82%, #6e000e 100%)',
+homeHeaderImage: '/bucky-banner.png',
 homeHeaderBorderBottom: '',
 
 homeWelcomeColor: '#ffffff',
@@ -118,11 +122,11 @@ homeInkSoft: '#a2454e',
 homeAccentSolid: '#a2454e',
 homeAccentGradient: '#e23b4c',
 homeUseGradientForActive: false,
-homeThemeButtonActiveBackground: '#fdb201',
-homeThemeButtonActiveColor: '#a20110',
-homeThemeButtonInactiveColor: '#ffa7a6',
-homeThemeButtonInactiveBorder: '#ffa7a6',
-homeThemeButtonInactiveBackground: 'transparent',
+homeThemeButtonActiveBackground: '#e23b4c',
+homeThemeButtonActiveColor: '#340005',
+homeThemeButtonInactiveColor: '#a20110',
+homeThemeButtonInactiveBorder: '#a20110',
+homeThemeButtonInactiveBackground: '#fdb201',
 
 homeLevelPalette: [
   { accent: '#a20110', bg: '#efaab1', ink: '#cb2738' },
@@ -149,9 +153,13 @@ disabledButtonColor: '#888888',
 cardBackground: '#114725',
 cardTextColor: '#cce8d3',
 
+homeHeaderImageHeight: '400%',
+homeHeaderImageOffset: '-70%',
+
 homeLabel: 'Billy Bronco',
 homePageBackground: '#fcfcfc',
-homeHeaderBackground: '#114725',
+homeHeaderBackground: 'linear-gradient(to bottom, #003a26 0%, #00804c 70%, #00452c 80%, #003d27 100%)',
+homeHeaderImage: '/billy-banner.png',
 homeHeaderBorderBottom: '',
 homeWelcomeColor: '#ffffff',
 homeWelcomeGradient: '',
@@ -164,11 +172,11 @@ homeInkSoft: '#2d533b',
 homeAccentSolid: '#2d533b',
 homeAccentGradient: '#38924e',
 homeUseGradientForActive: false,
-homeThemeButtonActiveBackground: '#fdb302',
-homeThemeButtonActiveColor: '#114725',
-homeThemeButtonInactiveColor: '#cce8d3',
-homeThemeButtonInactiveBorder: '#cce8d3',
-homeThemeButtonInactiveBackground: 'transparent',
+homeThemeButtonActiveBackground: '#38924e',
+homeThemeButtonActiveColor: '#041e13',
+homeThemeButtonInactiveColor: '#114725',
+homeThemeButtonInactiveBorder: '#114725',
+homeThemeButtonInactiveBackground: '#fdb302',
 
 homeLevelPalette: [
   { accent: '#114725', bg: '#cce8d3', ink: '#1d783e' },
