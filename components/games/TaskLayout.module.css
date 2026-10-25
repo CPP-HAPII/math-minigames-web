@@ -136,7 +136,7 @@
 .translation { margin: 0; padding: 14px; border-radius: 10px; background: var(--task-panel); line-height: 1.6; }
 .hoverToggle { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 0.95rem; font-weight: 800; cursor: pointer; }
 .hoverToggle input { width: 20px; height: 20px; margin: 0; accent-color: var(--task-ink); flex-shrink: 0; }
-.calculator { display: flex; justify-content: center; flex-wrap: wrap; margin-top: 18px; padding: 22px 12px; border-radius: 12px; }
+.calculator { display: flex; justify-content: center; flex-wrap: wrap; margin-top: 12px; padding: 8px 12px; border-radius: 12px; }
 
 /* ── Gradient + rolling hills on the question and answer cards ──
    Kept after the base card/input rules so these backgrounds win. */
@@ -234,9 +234,19 @@
   box-shadow: 0 3px 8px rgba(139, 92, 246, 0.3);
 }
 .assistButton {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   border-color: var(--assist-line);
   background: #ffffff;
   color: var(--assist-ink);
+}
+/* Icon images in the Language Assist rows (public/assist/*.png). */
+.assistRowIcon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  object-fit: contain;
 }
 .assistColumn button:not(:disabled):hover { outline-color: var(--assist-purple); }
 .assistColumn button:focus-visible,
@@ -245,8 +255,23 @@
 .translation { background: var(--assist-tint); color: var(--assist-ink); }
 .assistColumn .help { color: #6b5aa6; }
 
-/* Word-translation checkbox drawn as a toggle switch, on the right like the mockup. */
-.hoverToggle { flex-direction: row-reverse; justify-content: space-between; }
+/* Word-translation row: the same button box as the other assists, with the
+   checkbox drawn as a toggle switch on the right like the mockup. */
+.hoverToggle {
+  flex-direction: row-reverse;
+  justify-content: space-between;
+  min-height: 46px;
+  box-sizing: border-box;
+  padding: 10px 16px;
+  border: 1px solid var(--assist-line);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--assist-ink);
+  font-size: 1rem;
+  line-height: 1.4;
+}
+.hoverToggle:hover { outline: 2px solid var(--assist-purple); outline-offset: 2px; }
+.hoverToggleLabel { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .hoverToggle input {
   appearance: none;
   -webkit-appearance: none;

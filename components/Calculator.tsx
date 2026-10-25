@@ -73,8 +73,9 @@ export default function Calculator({ profile: p }: CalculatorProps) {
     color: p.contrastTextColor,
     border: 'none',
     borderRadius: '0.5rem',
-    padding: '0.45rem 0.85rem',
-    fontSize: '10rem',
+    padding: '0.1rem 0.4rem',
+    fontSize: '6.5rem',
+    lineHeight: 1,
     fontWeight: 700,
     cursor: 'pointer',
   };

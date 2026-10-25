@@ -71,7 +71,10 @@ function LanguageAssist({ question, assistLevel }: Pick<TaskLayoutProps, 'questi
         {!isPlayback && (
           <label className={styles.hoverToggle}>
             <input type="checkbox" checked={hydrated && hoverEnabled} onChange={(e) => setHoverEnabled(e.target.checked)} />
-            <span>Turn on word translation</span>
+            <span className={styles.hoverToggleLabel}>
+              <AssistRowIcon name="word-translation" />
+              Turn on word translation
+            </span>
           </label>
         )}
       </div>
@@ -87,6 +90,7 @@ function TranslationTools({ text, autoTranslate, speakOriginal }: { text: string
   return (
     <>
       <button type="button" className={styles.assistButton} onClick={translate} disabled={status === 'loading'}>
+        <AssistRowIcon name="translate" />
         {status === 'loading' ? 'Translating…' : 'Translate question'}
       </button>
       <div aria-live="polite">
@@ -94,13 +98,29 @@ function TranslationTools({ text, autoTranslate, speakOriginal }: { text: string
         {status === 'error' && <p className={styles.help}>Translation failed. Select Translate question to try again.</p>}
       </div>
       {speakOriginal && (
-        <button type="button" className={styles.assistButton} onClick={() => speak(text, 'en-US')}>Speak question</button>
+        <button type="button" className={styles.assistButton} onClick={() => speak(text, 'en-US')}>
+          <AssistRowIcon name="speak-question" />
+          Speak question
+        </button>
       )}
       {status === 'shown' && translated && (
-        <button type="button" className={styles.assistButton} onClick={speakTranslation}>Speak translated question</button>
+        <button type="button" className={styles.assistButton} onClick={speakTranslation}>
+          <AssistRowIcon name="speak-translated" />
+          Speak translated question
+        </button>
       )}
     </>
   );
+}
+
+// Icon images for the Language Assist rows, from public/assist/. To change an
+// icon, replace its PNG and keep the file name.
+type AssistRowIconName = 'translate' | 'speak-question' | 'speak-translated' | 'word-translation';
+
+function AssistRowIcon({ name }: { name: AssistRowIconName }) {
+  // Decorative only: the row's text already says what it does.
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={`/assist/${name}.png`} alt="" aria-hidden="true" className={styles.assistRowIcon} />;
 }
 
 // Icons for the gradient badges beside each assist heading.

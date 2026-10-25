@@ -18,6 +18,25 @@ interface JumbleGameProps {
   onComplete: (wasCorrect: boolean) => void;
 }
 
+/**
+ * A random display order for the word blocks: a list of indices into
+ * optionList. Questions store their options with the answer words first and
+ * in order, so showing optionList as-is would give the answer away.
+ * Never returns the original order (when there is more than one block).
+ */
+function shuffledOrder(count: number): number[] {
+  const order = Array.from({ length: count }, (_, i) => i);
+  if (count < 2) return order;
+  do {
+    // Fisher-Yates shuffle.
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [order[i], order[j]] = [order[j], order[i]];
+    }
+  } while (order.every((value, i) => value === i));
+  return order;
+}
+
 export default function JumbleGame({ question, onComplete }: JumbleGameProps) {
   // getMinSelection() = multiAcceptedAnswers[0].length — the max tokens selectable.
   const maxSelection = question.multiAcceptedAnswers[0]?.length ?? 0;
@@ -28,6 +47,12 @@ export default function JumbleGame({ question, onComplete }: JumbleGameProps) {
   // the Dart `contains` was) so each button is used once even with duplicate labels.
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
   const [result, setResult] = useState<OrderedSelectionResult | null>(null);
+
+  // Shuffled once when the question appears. PlayContent remounts this
+  // component for every question (and for each retry), so each gets a fresh
+  // order. selectedIndices stay indices into optionList, so checking the
+  // answer is unchanged; only the order the blocks are drawn in changes.
+  const [displayOrder] = useState(() => shuffledOrder(question.optionList.length));
 
   const solved = result === 'correct';
   const locked = solved || result === 'wrong';
@@ -84,7 +109,12 @@ export default function JumbleGame({ question, onComplete }: JumbleGameProps) {
           wrongMessage="Not quite — here’s the next question." incompleteMessage="Please select more answers." />}
       >
         <SelectedWords tokens={selectedTokens} />
-        <WordChoices options={question.optionList} usedIndices={selectedIndices} locked={locked} onSelect={handleSelect} />
+        <WordChoices
+          options={displayOrder.map((i) => question.optionList[i])}
+          usedIndices={selectedIndices.map((i) => displayOrder.indexOf(i))}
+          locked={locked}
+          onSelect={(position) => handleSelect(displayOrder[position])}
+        />
       </AnswerPanel>
     </>
   );
