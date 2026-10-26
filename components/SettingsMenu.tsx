@@ -211,34 +211,19 @@ export default function SettingsMenu({ profile: p, hydrated }: { profile: ColorP
 }
 
 // Shared banner for the level overview and the current question.
-// Pass onHome to show a Home button before the title (the play screen does;
-// the level overview leaves it out, since it is already home).
-export function CoachHeader({ profile: p, hydrated, children, onHome }: {
+export function CoachHeader({ profile: p, hydrated, children }: {
   profile: ColorProfile;
   hydrated: boolean;
   children: ReactNode;
-  onHome?: () => void;
 }) {
   return (
     <header className="coach-header" style={{
       background: p.homeHeaderBackground,
       borderBottom: p.homeHeaderBorderBottom || undefined,
     }}>
-      <div className="coach-title">
-        {onHome && (
-          <button
-            type="button" className="coach-home" onClick={onHome}
-            aria-label="Home" title="Back to home"
-            style={{ color: p.headerColor, background: p.contrastTextColor }}
-          >
-            {/* public/icons/home.svg, painted in the button's colour (like the gear) so it follows the theme. */}
-            <span className="coach-home-icon" aria-hidden="true" />
-          </button>
-        )}
-        <h1 style={{ fontFamily: p.homeWelcomeFont, color: p.homeWelcomeColor || p.contrastTextColor }}>
-          {children}
-        </h1>
-      </div>
+      <h1 style={{ fontFamily: p.homeWelcomeFont, color: p.homeWelcomeColor || p.contrastTextColor }}>
+        {children}
+      </h1>
       <div className="coach-settings">
         <SettingsMenu profile={p} hydrated={hydrated} />
       </div>
@@ -266,21 +251,7 @@ export function CoachHeader({ profile: p, hydrated, children, onHome }: {
   mask-image: linear-gradient(to right, transparent, #000 40%, #000 88%, transparent);
   pointer-events: none;
 }
-  .coach-title, .coach-settings { position: relative; z-index: 1; }
-  .coach-title { display: flex; align-items: center; gap: 14px; min-width: 0; }
-  .coach-home {
-    width: 44px; height: 44px; flex-shrink: 0;
-    display: grid; place-items: center;
-    padding: 0; border: 0; border-radius: 50%; cursor: pointer;
-  }
-  .coach-home-icon {
-    width: 28px; height: 28px;
-    background: currentColor;
-    -webkit-mask: url('/icons/home.svg') center / contain no-repeat;
-    mask: url('/icons/home.svg') center / contain no-repeat;
-  }
-  .coach-home:hover { opacity: 0.85; }
-  .coach-home:focus-visible { outline: 2px solid ${p.contrastTextColor}; outline-offset: 3px; }
+  h1, .coach-settings { position: relative; z-index: 1; }
   h1 { margin: 0; font-size: clamp(1.2rem, 2vw, 1.65rem); font-weight: 800; line-height: 1.3; overflow-wrap: anywhere; }
   .coach-settings { grid-column: 3; align-self: center; }
   @media (max-width: 760px) {
