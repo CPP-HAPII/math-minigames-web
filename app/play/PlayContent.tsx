@@ -90,6 +90,10 @@ export default function PlayContent() {
   const preSeriesHighScoreRef = useRef(highScore);
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [retryIntroDismissed, setRetryIntroDismissed] = useState(false);
+  // Set when the student heads home. The session is cleared straight away but
+  // the home page takes a moment to load; without this, that gap showed the
+  // "No questions available" screen (with its own Back to Home button).
+  const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
     if (!isLoaded || !sublevel) return;
@@ -257,6 +261,7 @@ export default function PlayContent() {
   }
 
   function handlePlayAgain() {
+    setLeaving(true);
     if (pendingAdvanceRef.current !== null) {
       clearTimeout(pendingAdvanceRef.current);
       pendingAdvanceRef.current = null;
@@ -293,6 +298,12 @@ export default function PlayContent() {
     cursor: 'pointer',
     marginTop: '1.5rem',
   };
+
+  // ── Leaving for home ────────────────────────────────────────────────────────
+  // A plain page in the theme's background until /home replaces it.
+  if (leaving) {
+    return <main style={{ minHeight: '100vh', background: p.homePageBackground }} aria-busy="true" />;
+  }
 
   // ── Loading / error states ──────────────────────────────────────────────────
   if (isLoading || !isLoaded) {
@@ -507,7 +518,15 @@ export default function PlayContent() {
 
   return (
     <main className={styles.page} style={{ background: p.homePageBackground, color: p.homeInk }}>
-      <CoachHeader profile={p} hydrated={hydrated}>
+      {/* Home asks first, then leaves the level the same way "Back to Home" does
+          on the results screen: cancels a pending advance, clears the session,
+          and goes to /home. */}
+      <CoachHeader
+        profile={p}
+        hydrated={hydrated}
+        onHome={handlePlayAgain}
+        homeWarning="Going home will reset your progress in this level. Next time, you'll start again from the first question."
+      >
         {sublevelLabel}
       </CoachHeader>
 

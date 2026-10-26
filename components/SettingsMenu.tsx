@@ -211,19 +211,87 @@ export default function SettingsMenu({ profile: p, hydrated }: { profile: ColorP
 }
 
 // Shared banner for the level overview and the current question.
-export function CoachHeader({ profile: p, hydrated, children }: {
+// Pass onHome to show a Home button before the title (the play screen does;
+// the level overview leaves it out, since it is already home). Pass
+// homeWarning too and Home asks the student to confirm first.
+export function CoachHeader({ profile: p, hydrated, children, onHome, homeWarning }: {
   profile: ColorProfile;
   hydrated: boolean;
   children: ReactNode;
+  onHome?: () => void;
+  /** Message for the "Go back home?" box. Without it, Home leaves straight away. */
+  homeWarning?: string;
 }) {
+  const homeButtonRef = useRef<HTMLButtonElement>(null);
+  const homeDialogRef = useRef<HTMLDialogElement>(null);
+
+  function handleHomeClick() {
+    if (!onHome) return;
+    const dialog = homeDialogRef.current;
+    if (homeWarning && dialog) {
+      // Native modal: traps focus, Escape closes it (= Cancel).
+      if (!dialog.open) dialog.showModal();
+    } else {
+      onHome();
+    }
+  }
+
+  function cancelHome() {
+    homeDialogRef.current?.close();
+  }
+
+  function confirmHome() {
+    homeDialogRef.current?.close();
+    onHome?.();
+  }
+
   return (
     <header className="coach-header" style={{
       background: p.homeHeaderBackground,
       borderBottom: p.homeHeaderBorderBottom || undefined,
     }}>
-      <h1 style={{ fontFamily: p.homeWelcomeFont, color: p.homeWelcomeColor || p.contrastTextColor }}>
-        {children}
-      </h1>
+      <div className="coach-title">
+        {onHome && (
+          <button
+            ref={homeButtonRef} type="button" className="coach-home" onClick={handleHomeClick}
+            aria-label="Home" title="Back to home" aria-haspopup={homeWarning ? 'dialog' : undefined}
+            style={{ color: p.headerColor, background: p.contrastTextColor }}
+          >
+            {/* public/icons/home.svg, painted in the button's colour (like the gear) so it follows the theme. */}
+            <span className="coach-home-icon" aria-hidden="true" />
+          </button>
+        )}
+        <h1 style={{ fontFamily: p.homeWelcomeFont, color: p.homeWelcomeColor || p.contrastTextColor }}>
+          {children}
+        </h1>
+      </div>
+
+      {onHome && homeWarning && (
+        <dialog
+          ref={homeDialogRef} className="home-dialog"
+          aria-labelledby="home-dialog-title" aria-describedby="home-dialog-message"
+          onClose={() => homeButtonRef.current?.focus()}
+          onClick={({ target, currentTarget, clientX, clientY }) => {
+            // A click on the dimmed area outside the box counts as Cancel.
+            if (target !== currentTarget) return;
+            const { left, right, top, bottom } = currentTarget.getBoundingClientRect();
+            if (clientX < left || clientX > right || clientY < top || clientY > bottom) cancelHome();
+          }}
+        >
+          <h2 id="home-dialog-title">Go back home?</h2>
+          <p id="home-dialog-message">{homeWarning}</p>
+          <div className="home-dialog-actions">
+            {/* Cancel comes first, so it gets the focus when the box opens. */}
+            <button type="button" className="home-dialog-cancel" onClick={cancelHome}>Cancel</button>
+            <button
+              type="button" className="home-dialog-confirm" onClick={confirmHome}
+              style={{ background: p.homeAccentGradient, color: p.contrastTextColor }}
+            >
+              Go home
+            </button>
+          </div>
+        </dialog>
+      )}
       <div className="coach-settings">
         <SettingsMenu profile={p} hydrated={hydrated} />
       </div>
@@ -251,7 +319,45 @@ export function CoachHeader({ profile: p, hydrated, children }: {
   mask-image: linear-gradient(to right, transparent, #000 40%, #000 88%, transparent);
   pointer-events: none;
 }
-  h1, .coach-settings { position: relative; z-index: 1; }
+  .coach-title, .coach-settings { position: relative; z-index: 1; }
+  .coach-title { display: flex; align-items: center; gap: 14px; min-width: 0; }
+  .coach-home {
+    width: 44px; height: 44px; flex-shrink: 0;
+    display: grid; place-items: center;
+    padding: 0; border: 0; border-radius: 50%; cursor: pointer;
+  }
+  .coach-home-icon {
+    width: 28px; height: 28px;
+    background: currentColor;
+    -webkit-mask: url('/icons/home.svg') center / contain no-repeat;
+    mask: url('/icons/home.svg') center / contain no-repeat;
+  }
+  .coach-home:hover { opacity: 0.85; }
+  .coach-home:focus-visible { outline: 2px solid ${p.contrastTextColor}; outline-offset: 3px; }
+
+  /* "Go back home?" confirmation box, centred over a dimmed page. Tailwind's
+     base styles reset every element's margin to 0, which removes the
+     browser's own centring for dialogs, so centre it explicitly. */
+  .home-dialog {
+    position: fixed; inset: 0; margin: auto; height: fit-content;
+    width: min(420px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto;
+    box-sizing: border-box; padding: 24px;
+    border: 1px solid ${p.homeBorder}; border-radius: 20px;
+    background: ${p.homeSurfaceBackground}; color: ${p.homeInk};
+    font-family: var(--font-nunito), sans-serif;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  }
+  .home-dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
+  .home-dialog h2 { margin: 0 0 8px; font-size: 22px; font-weight: 800; }
+  .home-dialog p { margin: 0; font-size: 16px; line-height: 1.5; }
+  .home-dialog-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+  .home-dialog-actions button {
+    min-height: 44px; padding: 10px 22px; border-radius: 999px;
+    font: inherit; font-weight: 800; cursor: pointer;
+  }
+  .home-dialog-cancel { border: 2px solid ${p.homeBorder}; background: transparent; color: ${p.homeInk}; }
+  .home-dialog-confirm { border: 0; }
+  .home-dialog-actions button:focus-visible { outline: 2px solid ${p.homeAccentSolid}; outline-offset: 3px; }
   h1 { margin: 0; font-size: clamp(1.2rem, 2vw, 1.65rem); font-weight: 800; line-height: 1.3; overflow-wrap: anywhere; }
   .coach-settings { grid-column: 3; align-self: center; }
   @media (max-width: 760px) {
