@@ -75,7 +75,6 @@ export default function PlayContent() {
   const score = useSessionStore((s) => s.score);
   const correctCount = useSessionStore((s) => s.correctCount);
   const correctedAfterMistakeCount = useSessionStore((s) => s.correctedAfterMistakeCount);
-  const progress = useSessionStore((s) => s.progress);
   const questionLogs = useSessionStore((s) => s.questionLogs);
   const originalQuestionCount = useSessionStore((s) => s.originalQuestionCount);
   const highScore = useSessionStore((s) => s.highScore);
@@ -505,16 +504,34 @@ export default function PlayContent() {
   // ── Playing ──────────────────────────────────────────────────────────────────
   const retrying = currentIndex >= originalQuestionCount;
 
+  // The bar moves forward on every answer, right or wrong: answered so far over
+  // everything in the queue. A wrong answer adds its question to the end of the
+  // queue, but the bar still moves forward, because (i + 1) / (n + 1) > i / n
+  // whenever i < n. It reaches 100% when the last question is solved.
+  // (sessionStore.progress only counts correct answers, so it sat at 0% while
+  // a student was still getting questions wrong.)
+  const barProgress = questions.length > 0 ? Math.min(1, currentIndex / questions.length) : 0;
+
+  // The first pass counts against the original number of questions, so the
+  // total doesn't grow when a question is missed. Missed questions are then
+  // counted as their own retry round.
+  const countLabel = retrying
+    ? `Retry ${currentIndex - originalQuestionCount + 1} / ${questions.length - originalQuestionCount}`
+    : `Question ${currentIndex + 1} / ${originalQuestionCount}`;
+
   return (
     <main className={styles.page} style={{ background: p.homePageBackground, color: p.homeInk }}>
-      <CoachHeader profile={p} hydrated={hydrated}>
+      {/* Home leaves the level the same way "Back to Home" does on the results
+          screen: cancels a pending advance, clears the session, goes to /home.
+          Answers already given are saved to Firestore as each one is answered. */}
+      <CoachHeader profile={p} hydrated={hydrated} onHome={handlePlayAgain}>
         {sublevelLabel}
       </CoachHeader>
 
       <div className={styles.content}>
         <div className={styles.progressRow}>
-          <p className={styles.questionCount}>Question {currentIndex + 1} / {questions.length}</p>
-          <div className={styles.progressTrack}><ProgressBar progress={progress} profile={p} /></div>
+          <p className={styles.questionCount}>{countLabel}</p>
+          <div className={styles.progressTrack}><ProgressBar progress={barProgress} profile={p} /></div>
         </div>
         {retrying && <p className={styles.retryNotice}>Retrying missed questions</p>}
         {currentQuestion && (
