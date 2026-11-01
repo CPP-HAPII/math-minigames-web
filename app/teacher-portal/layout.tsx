@@ -37,7 +37,6 @@ export default function TeacherPortalLayout({ children }: { children: React.Reac
       <header
         style={{
           background: t.headerBackground,
-          borderBottom: `1px solid ${t.cardBorder}`,
           padding: '0.85rem 1.5rem',
           display: 'flex',
           justifyContent: 'space-between',

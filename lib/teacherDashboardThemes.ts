@@ -23,7 +23,6 @@ export interface DashboardTheme {
   headerBackground: string;
 
   cardBackground: string;
-  cardBorder: string;
 
   navInactiveBackground: string;
   navBorder: string;
@@ -44,63 +43,40 @@ export interface DashboardTheme {
   axisLine: string;
 }
 
-export const darkGreenDashboardTheme: DashboardTheme = {
-  idKey: 'teacher dark green',
-  label: 'Green',
-  pageBackground: '#121916',
-  headerBackground: 'linear-gradient(90deg, #0B241C 0%, #14392C 100%)',
-  cardBackground: '#1B2622',
-  cardBorder: '#2C3D36',
-  navInactiveBackground: '#182420',
-  navBorder: '#2C3D36',
-  text: '#FFFFFF',
-  // Softened from a more saturated #1E8F6E — that read as too vivid/neon
-  // across large bar fills and button backgrounds.
-  accent: '#3FA98A',
+export const SCUTheme: DashboardTheme = {
+  idKey: 'SCU flavor',
+  label: 'Bucky the Bronco',
+  pageBackground: '#fefefd',
+  headerBackground: 'linear-gradient(to bottom, #9a0016 0%, #d8001f 70%, #8a0012 82%, #6e000e 100%)',
+  cardBackground: '#a20110',
+  navInactiveBackground: '#a20110',
+  navBorder: '#a20110',
+  text: '#340005',
+  accent: '#e23b4c',
   accentText: '#FFFFFF',
-  warning: '#E57373',
-  pickerInactiveBackground: '#121916',
-  axisLine: '#3A4D45',
+  warning: '#fdb302',
+  pickerInactiveBackground: '#fdb201',
+  axisLine: '#888888',
 };
 
-export const darkBlueDashboardTheme: DashboardTheme = {
-  idKey: 'teacher dark blue',
-  label: 'Blue',
-  pageBackground: '#10161F',
-  headerBackground: 'linear-gradient(90deg, #0B1A2C 0%, #163756 100%)',
-  cardBackground: '#18222F',
-  cardBorder: '#28384A',
-  navInactiveBackground: '#141E29',
-  navBorder: '#28384A',
-  text: '#FFFFFF',
-  accent: '#3A7FC4',
+export const CPPTheme: DashboardTheme = {
+  idKey: 'CPP flavor',
+  label: 'Billy Bronco',
+  pageBackground: '#fcfcfc',
+  headerBackground: 'linear-gradient(to bottom, #003a26 0%, #00804c 70%, #00452c 80%, #003d27 100%)',
+  cardBackground: '#114725',
+  navInactiveBackground: '#114725',
+  navBorder: '#114725',
+  text: '#041e13',
+  accent: '#38924e',
   accentText: '#FFFFFF',
-  warning: '#E57373',
-  pickerInactiveBackground: '#10161F',
-  axisLine: '#3E5266',
-};
-
-export const darkPlumDashboardTheme: DashboardTheme = {
-  idKey: 'teacher dark plum',
-  label: 'Plum',
-  pageBackground: '#181420',
-  headerBackground: 'linear-gradient(90deg, #140F1C 0%, #362A55 100%)',
-  cardBackground: '#221B2E',
-  cardBorder: '#372C48',
-  navInactiveBackground: '#1D1728',
-  navBorder: '#372C48',
-  text: '#FFFFFF',
-  // Softened from a more saturated #6C5CC7 — same reason as green above.
-  accent: '#8A7FD1',
-  accentText: '#FFFFFF',
-  warning: '#E57373',
-  pickerInactiveBackground: '#181420',
-  axisLine: '#4A3E63',
+  warning: '#fdb302',
+  pickerInactiveBackground: '#fdb201',
+  axisLine: '#888888',
 };
 
 /** Ordered array of teacher-dashboard themes; index matches useTeacherDashboardThemeStore's themeIndex. */
-export const teacherDashboardThemes: [DashboardTheme, DashboardTheme, DashboardTheme] = [
-  darkGreenDashboardTheme,
-  darkBlueDashboardTheme,
-  darkPlumDashboardTheme,
+export const teacherDashboardThemes: [DashboardTheme, DashboardTheme] = [
+  SCUTheme,
+  CPPTheme,
 ];
