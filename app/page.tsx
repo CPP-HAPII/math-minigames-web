@@ -4,6 +4,7 @@
 // No passwords; userId is a 3-digit numeric string, matching Flutter's validator.
 
 import { useState, type CSSProperties } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/lib/stores/userStore';
 import { useThemeStore, selectActiveProfile } from '@/lib/stores/themeStore';
@@ -178,7 +179,7 @@ export default function LoginPage() {
             type="button"
             aria-label="Settings"
             aria-expanded={settingsOpen}
-            aria-controls="login-color-themes"
+            aria-controls="login-settings"
             title="Settings"
             onClick={() => setSettingsOpen((open) => !open)}
             className="transition-opacity hover:opacity-80"
@@ -202,8 +203,8 @@ export default function LoginPage() {
 
           {settingsOpen && (
             <div
-              id="login-color-themes"
-              aria-label="Color themes"
+              id="login-settings"
+              aria-label="Settings"
               style={{
                 position: 'absolute',
                 top: '44px',
@@ -220,6 +221,41 @@ export default function LoginPage() {
               }}
             >
               <ThemeSwitcher label="" />
+
+              {/* Teachers reach the dashboard from here — tucked into settings so
+                  it stays out of students' way on the sign-in screen. */}
+              <div
+                style={{
+                  marginTop: '12px',
+                  paddingTop: '12px',
+                  borderTop: `1px solid ${p.homeThemeButtonInactiveBorder}`,
+                }}
+              >
+                <Link
+                  href="/teacher-portal"
+                  className="transition-opacity hover:opacity-85"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '10px',
+                    minHeight: '40px',
+                    boxSizing: 'border-box',
+                    padding: '8px 14px',
+                    borderRadius: '999px',
+                    border: `2px solid ${p.homeThemeButtonInactiveBorder}`,
+                    background: p.homeThemeButtonInactiveBackground,
+                    color: p.homeThemeButtonInactiveColor,
+                    fontFamily: 'var(--font-nunito), sans-serif',
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    textDecoration: 'none',
+                  }}
+                >
+                  <span>Teacher dashboard</span>
+                  <span aria-hidden="true">→</span>
+                </Link>
+              </div>
             </div>
           )}
         </div>

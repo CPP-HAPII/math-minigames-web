@@ -9,7 +9,7 @@ export default defineConfig({
     environment: 'node',
     coverage: {
       provider: 'v8',
-      include: ['lib/services/analyticsService.ts'],
+      include: ['lib/services/analyticsService.ts', 'lib/teacherPortal.ts'],
     },
   },
   resolve: {

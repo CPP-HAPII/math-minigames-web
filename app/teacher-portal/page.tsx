@@ -1,6 +1,6 @@
-import { redirect } from 'next/navigation';
+import TeacherPortalDashboard from '@/components/teacher/TeacherPortalDashboard';
 
-/** /teacher-portal has no content of its own — Class Overview is the default section. */
-export default function TeacherPortalIndexPage() {
-  redirect('/teacher-portal/overview');
+/** The teacher portal is a single page: class summary, skills, assist usage and student insights. */
+export default function TeacherPortalPage() {
+  return <TeacherPortalDashboard />;
 }
